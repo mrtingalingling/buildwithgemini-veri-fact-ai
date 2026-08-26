@@ -589,10 +589,16 @@
       </svg>
       Scanning Active Tab
     </div>
-    <button id="btnScan" class="btn-scan">
-      <span class="material-symbols-outlined" style="font-size:0.8rem">query_stats</span>
-      Scan Page
-    </button>
+    <div style="display: flex; gap: 0.3rem;">
+      <button id="btnScan" class="btn-scan">
+        <span class="material-symbols-outlined" style="font-size:0.8rem">query_stats</span>
+        Scan Page
+      </button>
+      <button id="btnHighlight" class="btn-scan" style="background: rgba(0, 245, 212, 0.15); border-color: var(--accent); color: var(--accent);" title="Highlight verified/false claims inline on webpage with WOT tooltips">
+        <span class="material-symbols-outlined" style="font-size:0.85rem">auto_awesome</span>
+        Highlight
+      </button>
+    </div>
   </div>
 
   <div id="log"></div>
