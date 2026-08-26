@@ -961,6 +961,37 @@
     </div>
   </div>
 
+  <!-- Fact Catalog Manager Panel -->
+  <div class="source-panel" style="border-top: none;">
+    <div class="source-header" id="catalogHeader">
+      <div class="source-title">
+        <span class="material-symbols-outlined" style="font-size: 1rem; color: var(--accent);">database</span>
+        <span>Fact Catalog Manager</span>
+      </div>
+      <span id="catalogToggleIcon" class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--text-muted)">expand_more</span>
+    </div>
+    <div id="catalogBody" class="source-body hidden">
+      <div class="add-source-form" style="flex-direction: column; gap: 0.5rem; display: flex;">
+        <input type="text" id="catalogClaimInput" placeholder="Enter claim to add to database..." autocomplete="off" style="width: 100%;">
+        <div style="display: flex; gap: 0.5rem; width: 100%; align-items: center;">
+          <select id="catalogVerdictSelect" style="flex: 1.2; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; color: var(--text); font-size: 0.8rem; outline: none;">
+            <option value="True">Verdict: True</option>
+            <option value="False">Verdict: False</option>
+            <option value="Misleading">Verdict: Misleading</option>
+          </select>
+          <input type="number" id="catalogConfidenceInput" placeholder="Conf. (0-100)" min="0" max="100" style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; color: var(--text); font-size: 0.8rem; outline: none;" value="95">
+          <button id="btnAddCatalog" type="button" class="btn-add-fact" style="flex: 1; padding: 0.4rem 0.6rem; border-radius: 8px; font-size: 0.78rem;">Save Check</button>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.5rem; width: 100%;">
+        <button id="btnFetchCatalog" type="button" class="btn-add-fact" style="flex: 1; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); padding: 0.55rem; font-size: 0.78rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span class="material-symbols-outlined" style="font-size:0.95rem;">pageview</span>
+          Fetch Database Catalog
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Pulse timer notification bar -->
   <div id="scanningBanner" class="scanning-banner hidden">
     <div class="timer-box">
@@ -1606,6 +1637,57 @@ async function syncActivePremises() {
     `Let me know that my custom references are successfully loaded for future fact-checking!`
   );
 }
+
+// Fact Catalog Manager State & Interactions
+const catalogHeader = document.getElementById("catalogHeader");
+const catalogBody = document.getElementById("catalogBody");
+const catalogToggleIcon = document.getElementById("catalogToggleIcon");
+const catalogClaimInput = document.getElementById("catalogClaimInput");
+const catalogVerdictSelect = document.getElementById("catalogVerdictSelect");
+const catalogConfidenceInput = document.getElementById("catalogConfidenceInput");
+const btnAddCatalog = document.getElementById("btnAddCatalog");
+const btnFetchCatalog = document.getElementById("btnFetchCatalog");
+
+// Toggle catalog panel open/closed
+catalogHeader.addEventListener("click", () => {
+  catalogBody.classList.toggle("hidden");
+  if (catalogBody.classList.contains("hidden")) {
+    catalogToggleIcon.textContent = "expand_more";
+  } else {
+    catalogToggleIcon.textContent = "expand_less";
+  }
+});
+
+// Fetch catalog from agent database (Firestore)
+btnFetchCatalog.addEventListener("click", async () => {
+  const b = bubble("user");
+  b.textContent = "[Request] Fetching stored claim checks from my database catalog...";
+  await sendChatMessage("Show me the recent fact-checks in the catalog.");
+});
+
+// Save a direct custom fact check into the catalog
+btnAddCatalog.addEventListener("click", async () => {
+  const claim = catalogClaimInput.value.trim();
+  const verdict = catalogVerdictSelect.value;
+  const conf = parseInt(catalogConfidenceInput.value) || 95;
+  
+  if (!claim) return;
+  
+  const b = bubble("user");
+  b.textContent = `[Database Save] Claim: "${claim}" | Verdict: ${verdict} | Conf: ${conf}%`;
+  
+  catalogClaimInput.value = "";
+  
+  // Format saving directive to the agent
+  await sendChatMessage(
+    `Please save this verified fact-check to my catalog database:\n` +
+    `- Claim: "${claim}"\n` +
+    `- Verdict: "${verdict}"\n` +
+    `- Hallucination likelihood: ${100 - conf}\n` +
+    `- Sources: ["User Custom Assertion"]\n\n` +
+    `Confirm that it has been saved successfully!`
+  );
+});
 
 // Initialize sources on load
 window.addEventListener("load", () => {
