@@ -281,6 +281,62 @@
     box-shadow: none;
   }
 
+  /* Shimmering Skeleton Loader */
+  .skeleton-loader {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+    min-width: 200px;
+  }
+  .skeleton-bar {
+    height: 8px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.05) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: 4px;
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  /* Theme Button & OLED mode classes */
+  .btn-theme {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3rem;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+  .btn-theme:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--accent);
+  }
+  body.oled-theme {
+    background: #000000;
+  }
+  body.oled-theme .extension-frame {
+    background: #000000;
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+  body.oled-theme .permission-overlay {
+    background: rgba(0, 0, 0, 0.95);
+  }
+  body.oled-theme .permission-modal {
+    background: #0a0a0c;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  body.oled-theme header {
+    background: #000000;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
   /* Interactive Agent Dialogue Row */
   .agent-row {
     display: flex;
@@ -678,6 +734,9 @@
       <div class="brand">
         <span class="material-symbols-outlined brand-icon">security</span>
         <h1>VeriFact AI</h1>
+        <button id="themeToggle" class="btn-theme" title="Toggle OLED black mode" style="margin-left: 0.4rem;">
+          <span class="material-symbols-outlined" style="font-size: 1rem;">dark_mode</span>
+        </button>
       </div>
       <div id="permissionToggle" class="permission-status">
         <div class="status-dot"></div>
@@ -1037,7 +1096,7 @@ function renderReply(b, parts) {
 }
 
 async function sendChatMessage(text) {
-  const b = bubble("agent"); b.textContent = "…";
+  const b = bubble("agent"); b.innerHTML = `<div class="skeleton-loader"><div class="skeleton-bar" style="width: 80%"></div><div class="skeleton-bar" style="width: 95%"></div><div class="skeleton-bar" style="width: 60%"></div></div>`;
   try {
     const res = await fetch("/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text }) });
     const raw = await res.text();
@@ -1073,6 +1132,18 @@ form.addEventListener("submit", async (ev) => {
   }
   
   await sendChatMessage(queryPayload);
+});
+
+// OLED Theme Toggle Logic
+const themeToggle = document.getElementById("themeToggle");
+themeToggle.addEventListener("click", () => {
+  document.body.classList.toggle("oled-theme");
+  const icon = themeToggle.querySelector("span");
+  if (document.body.classList.contains("oled-theme")) {
+    icon.textContent = "light_mode";
+  } else {
+    icon.textContent = "dark_mode";
+  }
 });
 
 // Auto-grant access in Playwright / headless automation tests
