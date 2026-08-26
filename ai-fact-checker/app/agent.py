@@ -1,0 +1,178 @@
+# ruff: noqa
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import datetime
+from zoneinfo import ZoneInfo
+
+from google.adk.agents import Agent
+from google.adk.agents.callback_context import CallbackContext
+from google.adk.apps import App
+from google.adk.models import Gemini
+from google.adk.tools.preload_memory_tool import PreloadMemoryTool
+from google.genai import types
+from google.adk.code_executors.agent_engine_sandbox_code_executor import AgentEngineSandboxCodeExecutor
+import json
+import os
+from a2ui.schema.manager import A2uiSchemaManager
+from a2ui.basic_catalog.provider import BasicCatalog
+from app.a2ui_utils import a2ui_callback
+
+from app.app_utils.global_memory import (
+    get_active_scenario,
+    get_global_facts,
+    set_active_scenario,
+    share_global_fact,
+)
+from app.app_utils.firestore_db import get_fact_checks, save_fact_check
+from app.app_utils.source_checker import check_source_credibility
+from app.app_utils.rag_tool import consult_fact_rag_corpus
+from app.app_utils.video_generator import generate_fact_check_video
+
+
+# Dynamically resolve reasoning engine id from deployment metadata if available
+REASONING_ENGINE_NAME = None
+try:
+    meta_path = os.path.join(os.path.dirname(__file__), "..", "deployment_metadata.json")
+    if os.path.exists(meta_path):
+        with open(meta_path, "r") as f:
+            meta = json.load(f)
+            REASONING_ENGINE_NAME = meta.get("remote_agent_runtime_id")
+except Exception:
+    pass
+
+if not REASONING_ENGINE_NAME:
+    REASONING_ENGINE_NAME = "projects/419816504777/locations/us-east1/reasoningEngines/6326484353106837504"
+
+
+MODEL = "gemini-2.5-flash"
+
+
+schema_manager = A2uiSchemaManager(
+    version="0.8",
+    catalogs=[BasicCatalog.get_config("0.8")],
+)
+
+instruction = schema_manager.generate_system_prompt(
+    role_description=(
+        "You are a premium AI Fact-Checker assistant designed to verify claims, evaluate source credibility, "
+        "and check hallucination likelihood with percent likelihood that presented facts are not true. "
+        "You remember the user's stated preferences and facts from previous conversations to personalize responses. "
+        "You have access to two memory sources: the user's personal active scenario facts, and a global community fact pool."
+    ),
+    workflow_description=(
+        "1. When evaluating a claim, explicitly weigh it against the user's active personal scenario first.\n"
+        "2. If evaluating against the global pool, clearly cite that it is a community-sourced premise.\n"
+        "3. Present a side-by-side comparison of hallucination scores (one based on personal premises, one based on global premises) if they conflict.\n"
+        "4. Use consult_fact_rag_corpus to search the grounded Vertex AI RAG Corpus for verified facts and guidelines.\n"
+        "5. Use check_source_credibility to research background and credibility info on sources, authors, or organizations.\n"
+        "6. When you verify a claim and establish a verdict, save it to the fact-checks catalog using save_fact_check so it can be tracked.\n"
+        "7. If a user asks to see the catalog or history, use get_fact_checks to retrieve the stored results.\n"
+        "8. You can run Python code safely in a secure sandbox using code execution (AgentEngineSandboxCodeExecutor) if needed.\n"
+        "9. Analyze the user request and return a structured A2UI layout (e.g. Card, Column, Row, Text) summarizing the fact-check verdict, scores, and sources, in a beautiful, structured format instead of raw JSON.\n"
+        "10. If the user asks for a video explaining or debunking a claim or topic, use the generate_fact_check_video tool to generate a cinematic educational summary video, and return its public URL to the user."
+    ),
+    ui_description=(
+        "Keep every surface tiny and flat: ONE Card > ONE Column > a few Text rows. "
+        "Never nest a Card inside a Card. "
+        "Use ONLY these components: Card, Column, Row, Text, and Image. Do not use "
+        "Table or Heading (unsupported), or Buttons, actions, or forms (they do "
+        "nothing in adk web). "
+        "You may include one Image component, but only when you have a public https "
+        "URL for the image (for example the URL an image tool returns after uploading "
+        "to a public bucket). Set the Image url to that exact https link, for example "
+        "{\"Image\": {\"url\": {\"literalString\": \"https://...\"}}}. Never point an "
+        "Image at a bare filename, an artifact name, or a non-http(s) path. If you do "
+        "not have a public URL, add a short Text line noting the image instead. "
+        "No markdown in text; use the usageHint property ('h1', 'h2', 'body') for "
+        "headings and emphasis. "
+        "Output ONLY the raw A2UI JSON array — no prose, and never wrap it in "
+        "<a2a_datapart_json> tags or 'kind'/'data'/'metadata' objects."
+    ),
+    include_schema=True,
+    include_examples=True,
+)
+
+
+def get_weather(query: str) -> str:
+    """Simulates a web search. Use it get information on weather.
+
+    Args:
+        query: A string containing the location to get weather information for.
+
+    Returns:
+        A string with the simulated weather information for the queried location.
+    """
+    if "sf" in query.lower() or "san francisco" in query.lower():
+        return "It's 60 degrees and foggy."
+    return "It's 90 degrees and sunny."
+
+
+def get_current_time(query: str) -> str:
+    """Simulates getting the current time for a city.
+
+    Args:
+        city: The name of the city to get the current time for.
+
+    Returns:
+        A string with the current time information.
+    """
+    if "sf" in query.lower() or "san francisco" in query.lower():
+        tz_identifier = "America/Los_Angeles"
+    else:
+        return f"Sorry, I don't have timezone information for query: {query}."
+
+    tz = ZoneInfo(tz_identifier)
+    now = datetime.datetime.now(tz)
+    return f"The current time for query {query} is {now.strftime('%Y-%m-%d %H:%M:%S %Z%z')}"
+
+
+# WRITE: after each turn, send the session to Memory Bank for extraction.
+async def generate_memories_callback(callback_context: CallbackContext):
+    await callback_context.add_session_to_memory()
+    return None
+
+
+root_agent = Agent(
+    name="root_agent",
+    model=Gemini(
+        model=MODEL,
+        retry_options=types.HttpRetryOptions(attempts=3),
+    ),
+    instruction=instruction,
+    tools=[
+        PreloadMemoryTool(),
+        get_weather,
+        get_current_time,
+        share_global_fact,
+        get_global_facts,
+        set_active_scenario,
+        get_active_scenario,
+        save_fact_check,
+        get_fact_checks,
+        check_source_credibility,
+        consult_fact_rag_corpus,
+        generate_fact_check_video,
+    ],
+    code_executor=AgentEngineSandboxCodeExecutor(
+        agent_engine_resource_name=REASONING_ENGINE_NAME,
+    ),
+    after_model_callback=a2ui_callback,
+    after_agent_callback=generate_memories_callback,
+)
+
+app = App(
+    root_agent=root_agent,
+    name="app",
+)

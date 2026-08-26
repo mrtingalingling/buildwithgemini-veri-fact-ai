@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VeriFact AI - Chrome Extension</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #00f5d4;
+    --accent-glow: rgba(0, 245, 212, 0.25);
+    --accent-gradient: linear-gradient(135deg, #00f5d4 0%, #00bbf9 100%);
+    --purple-gradient: linear-gradient(135deg, #8338ec 0%, #3a86c8 100%);
+    --bg-dark: #090a10;
+    --bg-panel: #11131e;
+    --glass: rgba(255, 255, 255, 0.03);
+    --glass-focus: rgba(255, 255, 255, 0.06);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-active: rgba(0, 245, 212, 0.3);
+    --text: #f3f4f6;
+    --text-muted: #9ca3af;
+    --shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg-dark);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Extension Popup Frame Sandbox */
+  .extension-frame {
+    width: 375px;
+    height: 600px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Sleek Glassmorphic Header */
+  header {
+    background: rgba(17, 19, 30, 0.7);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 10;
+  }
+
+  .header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .brand-icon {
+    font-size: 1.5rem;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+  }
+
+  .brand h1 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  /* Permission Indicator Badges */
+  .permission-status {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .permission-status.active {
+    border-color: var(--border-active);
+    background: rgba(0, 245, 212, 0.05);
+    box-shadow: 0 0 10px rgba(0, 245, 212, 0.1);
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    background: #ef4444;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #ef4444;
+  }
+
+  .permission-status.active .status-dot {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse-dot 1.5s infinite alternate;
+  }
+
+  @keyframes pulse-dot {
+    0% { transform: scale(1); opacity: 0.7; }
+    100% { transform: scale(1.3); opacity: 1; }
+  }
+
+  /* Mock Active Tab Selector */
+  .mock-tab-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    padding: 0.35rem 0.6rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+  }
+
+  .mock-tab-selector label {
+    color: var(--text-muted);
+  }
+
+  .mock-tab-selector select {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    outline: none;
+    width: 170px;
+  }
+
+  .mock-tab-selector select option {
+    background: var(--bg-panel);
+    color: var(--text);
+  }
+
+  /* Active Permission Info / Scanning Banner */
+  .scanning-banner {
+    background: linear-gradient(90deg, rgba(0, 245, 212, 0.06) 0%, rgba(131, 56, 236, 0.06) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 1.2rem;
+    font-size: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+  }
+
+  .scanning-banner.hidden {
+    display: none;
+  }
+
+  .timer-box {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .timer-box span {
+    font-family: monospace;
+    font-size: 0.85rem;
+  }
+
+  .btn-scan {
+    background: var(--accent-gradient);
+    border: none;
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    color: #000;
+    font-weight: 600;
+    font-size: 0.7rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+  }
+
+  /* Chat Logs */
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    scroll-behavior: smooth;
+  }
+
+  #log::-webkit-scrollbar {
+    width: 5px;
+  }
+  #log::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  #log::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+
+  /* Dialogue message layouts */
+  .msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 90%;
+    animation: fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user {
+    align-self: flex-end;
+    align-items: flex-end;
+  }
+
+  .msg.agent {
+    align-self: flex-start;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .bubble {
+    padding: 0.75rem 1rem;
+    border-radius: 16px;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    border: 1px solid var(--border);
+  }
+
+  .msg.user .bubble {
+    background: var(--purple-gradient);
+    border: none;
+    border-bottom-right-radius: 4px;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(131, 56, 236, 0.2);
+  }
+
+  .msg.agent .bubble {
+    background: var(--glass);
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .bubble.rich {
+    background: transparent;
+    border: none;
+    padding: 0;
+    max-width: 100%;
+    white-space: normal;
+    box-shadow: none;
+  }
+
+  /* Interactive Agent Dialogue Row */
+  .agent-row {
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .avatar-box {
+    width: 28px;
+    height: 28px;
+    background: rgba(0, 245, 212, 0.05);
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 8px var(--accent-glow);
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+  }
+
+  .agent-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1;
+  }
+
+  .agent-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-left: 0.1rem;
+  }
+
+  /* Example prompts row above input */
+  .example-prompts {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0 1.2rem 0.6rem 1.2rem;
+    background: rgba(17, 19, 30, 0.8);
+    backdrop-filter: blur(12px);
+    overflow-x: auto;
+    white-space: nowrap;
+    width: 100%;
+  }
+  .example-prompts::-webkit-scrollbar {
+    display: none;
+  }
+  .prompt-pill {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+    display: inline-block;
+  }
+  .prompt-pill:hover {
+    background: rgba(0, 245, 212, 0.05);
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  /* --- Premium Dark Glassmorphic A2UI styles --- */
+  .a2card {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.1rem;
+    background: rgba(255, 255, 255, 0.02);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    max-width: 100%;
+    backdrop-filter: blur(10px);
+  }
+  
+  .a2card:hover {
+    border-color: var(--border-active);
+  }
+
+  .a2col { display: flex; flex-direction: column; gap: 0.5rem; }
+  .a2row { display: flex; flex-direction: row; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+  .a2row.between { justify-content: space-between; }
+  
+  .a2text { margin: 0; line-height: 1.4; color: var(--text); }
+  .a2text.a2-h1 { font-size: 1.3rem; font-weight: 700; color: #fff; }
+  .a2text.a2-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; }
+  .a2text.a2-h3 { font-size: 1rem; font-weight: 600; color: var(--accent); }
+  .a2text.a2-h4 { font-size: 0.95rem; font-weight: 600; }
+  .a2text.a2-caption { font-size: 0.8rem; color: var(--text-muted); }
+  
+  .a2divider { border: none; border-top: 1px solid var(--border); margin: 0.5rem 0; width: 100%; }
+  .a2img { max-width: 100%; border-radius: 10px; display: block; border: 1px solid var(--border); }
+  
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-size: 1.25rem;
+    line-height: 1;
+    vertical-align: middle;
+    color: var(--accent);
+  }
+
+  /* Form & Interactive Input */
+  form {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.9rem 1.2rem;
+    border-top: 1px solid var(--border);
+    background: rgba(17, 19, 30, 0.8);
+    backdrop-filter: blur(12px);
+    align-items: center;
+    width: 100%;
+  }
+
+  .input-wrapper {
+    position: relative;
+    flex: 1;
+  }
+
+  input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.88rem;
+    color: var(--text);
+    outline: none;
+    font-family: inherit;
+    transition: all 0.3s ease;
+  }
+
+  input:focus {
+    border-color: var(--accent);
+    background: var(--glass-focus);
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+
+  form button {
+    padding: 0.75rem 1.2rem;
+    border: none;
+    border-radius: 12px;
+    background: var(--accent-gradient);
+    color: #000;
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px var(--accent-glow);
+  }
+
+  form button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px var(--accent-glow);
+  }
+
+  /* Glassmorphic Sliding Permission Dialog Overlay */
+  .permission-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(9, 10, 16, 0.85);
+    backdrop-filter: blur(12px);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    z-index: 100;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .permission-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .permission-modal {
+    width: 100%;
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border);
+    border-top-left-radius: 28px;
+    border-top-right-radius: 28px;
+    padding: 2rem 1.5rem;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    transform: translateY(0);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .permission-overlay.hidden .permission-modal {
+    transform: translateY(100%);
+  }
+
+  .modal-shield {
+    align-self: center;
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 245, 212, 0.05);
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  .modal-shield span {
+    font-size: 2.2rem;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .modal-text {
+    text-align: center;
+  }
+
+  .modal-text h2 {
+    margin: 0 0 0.4rem 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .modal-text p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+
+  /* Duration Selector Cards */
+  .duration-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .duration-card {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .duration-card:hover {
+    background: var(--glass-focus);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .duration-card.selected {
+    background: rgba(0, 245, 212, 0.04);
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(0, 245, 212, 0.08);
+  }
+
+  .duration-label {
+    font-size: 0.88rem;
+    font-weight: 500;
+  }
+
+  .duration-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .radio-dot {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+  }
+
+  .duration-card.selected .radio-dot {
+    border-color: var(--accent);
+  }
+
+  .duration-card.selected .radio-dot::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .modal-actions button {
+    flex: 1;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+  }
+
+  .btn-grant {
+    background: var(--accent-gradient);
+    color: #000;
+    box-shadow: 0 4px 15px var(--accent-glow);
+  }
+
+  .btn-deny {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-deny:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+</style>
+</head>
+<body>
+
+<div class="extension-frame">
+  <!-- Dynamic Permission Dialog Overlay Modal -->
+  <div id="permissionOverlay" class="permission-overlay">
+    <div class="permission-modal">
+      <div class="modal-shield">
+        <span class="material-symbols-outlined">shield_person</span>
+      </div>
+      <div class="modal-text">
+        <h2>Read Active Page?</h2>
+        <p>Grant permission for the Fact-Checker to read the text of the active browser tab to perform real-time verification.</p>
+      </div>
+
+      <div class="duration-options">
+        <div class="duration-card selected" data-duration="once">
+          <div>
+            <div class="duration-label">Just once</div>
+            <div class="duration-desc">Valid only for the very next query</div>
+          </div>
+          <div class="radio-dot"></div>
+        </div>
+        <div class="duration-card" data-duration="15m">
+          <div>
+            <div class="duration-label">For 15 Minutes</div>
+            <div class="duration-desc">Access auto-expires in 15 minutes</div>
+          </div>
+          <div class="radio-dot"></div>
+        </div>
+        <div class="duration-card" data-duration="1h">
+          <div>
+            <div class="duration-label">For 1 Hour</div>
+            <div class="duration-desc">Access auto-expires in 1 hour</div>
+          </div>
+          <div class="radio-dot"></div>
+        </div>
+        <div class="duration-card" data-duration="always">
+          <div>
+            <div class="duration-label">Always for this domain</div>
+            <div class="duration-desc">Persistent access on this tab's domain</div>
+          </div>
+          <div class="radio-dot"></div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="btnDeny" class="btn-deny">Deny</button>
+        <button id="btnGrant" class="btn-grant">Grant Access</button>
+      </div>
+    </div>
+  </div>
+
+  <header>
+    <div class="header-main">
+      <div class="brand">
+        <span class="material-symbols-outlined brand-icon">security</span>
+        <h1>VeriFact AI</h1>
+      </div>
+      <div id="permissionToggle" class="permission-status">
+        <div class="status-dot"></div>
+        <span id="permissionLabel">Tab Access</span>
+      </div>
+    </div>
+
+    <!-- Interactive Active Tab Page Selector -->
+    <div class="mock-tab-selector">
+      <span class="material-symbols-outlined" style="font-size:1rem;color:var(--text-muted)">language</span>
+      <label for="activeTabSelect">Active Tab:</label>
+      <select id="activeTabSelect">
+        <option value="flat_earth">Flat Earth Article (wikipedia.org)</option>
+        <option value="brain_myth">10% Brain Myth (scientificamerican.com)</option>
+        <option value="seeded_catalog">Seeded Claims List (fact-database.org)</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Pulse timer notification bar -->
+  <div id="scanningBanner" class="scanning-banner hidden">
+    <div class="timer-box">
+      <span class="material-symbols-outlined" style="font-size:0.95rem;animation:spin 4s linear infinite">hourglass_empty</span>
+      Access active: <span id="timeLeft">00:00</span>
+    </div>
+    <button id="btnScan" class="btn-scan">
+      <span class="material-symbols-outlined" style="font-size:0.85rem">query_stats</span>
+      Scan Page Content
+    </button>
+  </div>
+
+  <div id="log"></div>
+
+  <!-- Example prompts container row -->
+  <div class="example-prompts">
+    <div class="prompt-pill" onclick="usePrompt('Did humans land on Mars in 2024?')">🚀 Mars landing in 2024?</div>
+    <div class="prompt-pill" onclick="usePrompt('Is the Earth flat? Fact-check it and save to catalog.')">🌍 Is Earth flat?</div>
+    <div class="prompt-pill" onclick="usePrompt('Show me the recent fact-checks in the catalog.')">📊 Show catalog</div>
+  </div>
+
+  <form id="form">
+    <div class="input-wrapper">
+      <input id="input" placeholder="Ask fact-checker or click 'Scan Page'…" autocomplete="off" autofocus>
+    </div>
+    <button>Send</button>
+  </form>
+</div>
+
+<script>
+const log = document.getElementById("log");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+const activeTabSelect = document.getElementById("activeTabSelect");
+
+// Permission Elements
+const permissionOverlay = document.getElementById("permissionOverlay");
+const permissionToggle = document.getElementById("permissionToggle");
+const permissionLabel = document.getElementById("permissionLabel");
+const scanningBanner = document.getElementById("scanningBanner");
+const timeLeft = document.getElementById("timeLeft");
+const btnScan = document.getElementById("btnScan");
+const btnDeny = document.getElementById("btnDeny");
+const btnGrant = document.getElementById("btnGrant");
+const durationCards = document.querySelectorAll(".duration-card");
+
+// State management
+let permissionState = {
+  status: "denied", // 'granted' or 'denied'
+  duration: "once", // 'once', '15m', '1h', 'always'
+  expiresAt: null
+};
+
+// Simulated mock page contents depending on selected active tab
+const MOCK_PAGES = {
+  flat_earth: `Title: The Flat Earth Theory in the Modern Era
+Content: The Flat Earth theory is a modern conspiracy belief stating that the earth is not a sphere, but a flat disc surrounded by an ice wall. This claim contradicts hundreds of years of physical observations, space missions, and satellite photographs showing the Earth is an oblate spheroid. Modern flat-earth promoters suggest that NASA and other international agencies fake celestial photography to maintain the illusion of a spherical Earth.`,
+  
+  brain_myth: `Title: Understanding Human Brain Capacity
+Content: It is a commonly repeated belief that humans use only 10% of their brains. According to neurological research, human beings use virtually all parts of their brains, and almost all of it is active almost all the time. Neuroimaging tools like fMRI demonstrate that complex actions involve the cooperation of many different brain areas, even during sleep.`,
+  
+  seeded_catalog: `Title: Seeded Database Claims Analysis
+Content: Our local fact-check database registers claims for quick matching. The flat earth claim holds a 'FALSE' verdict with high hallucination likelihood. The 10% brain myth also possesses a 'FALSE' verdict. Seeded entries provide quick answers about verified factual reports.`
+};
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+// Clickable prompts helper function
+window.usePrompt = function(text) {
+  input.value = text;
+  input.focus();
+  form.dispatchEvent(new Event('submit'));
+};
+
+function bubble(who) {
+  const m = el("div", "msg " + who);
+  
+  if (who === "agent") {
+    // Agent dialogue row
+    const row = el("div", "agent-row");
+    
+    // Avatar
+    const avatar = el("div", "avatar-box");
+    const avatarIcon = el("span", "material-symbols-outlined");
+    avatarIcon.textContent = "security";
+    avatarIcon.style.fontSize = "1rem";
+    avatar.appendChild(avatarIcon);
+    
+    // Bubble area
+    const contentBox = el("div", "agent-content");
+    const label = el("div", "agent-label", "VeriFact AI");
+    const b = el("div", "bubble");
+    
+    contentBox.appendChild(label);
+    contentBox.appendChild(b);
+    
+    row.appendChild(avatar);
+    row.appendChild(contentBox);
+    m.appendChild(row);
+    
+    log.appendChild(m);
+    log.scrollTop = log.scrollHeight;
+    return b;
+  } else {
+    // User bubble
+    const b = el("div", "bubble");
+    m.appendChild(b);
+    log.appendChild(m);
+    log.scrollTop = log.scrollHeight;
+    return b;
+  }
+}
+
+// Dialog Interaction: select duration card
+durationCards.forEach(card => {
+  card.addEventListener("click", () => {
+    durationCards.forEach(c => c.classList.remove("selected"));
+    card.classList.add("selected");
+    permissionState.duration = card.getAttribute("data-duration");
+  });
+});
+
+// Grant Permission Flow
+btnGrant.addEventListener("click", () => {
+  permissionState.status = "granted";
+  
+  // Set expiration timestamp
+  const now = new Date();
+  if (permissionState.duration === "once") {
+    permissionState.expiresAt = new Date(now.getTime() + 60 * 1000); // 1 minute buffer
+  } else if (permissionState.duration === "15m") {
+    permissionState.expiresAt = new Date(now.getTime() + 15 * 60 * 1000);
+  } else if (permissionState.duration === "1h") {
+    permissionState.expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
+  } else if (permissionState.duration === "always") {
+    permissionState.expiresAt = new Date(now.getTime() + 100 * 365 * 24 * 60 * 60 * 1000); // 100 years
+  }
+
+  updatePermissionUI();
+  permissionOverlay.classList.add("hidden");
+  
+  // Quick system notification bubble
+  const b = bubble("agent");
+  const durName = permissionState.duration === "once" ? "this query" : 
+                  permissionState.duration === "15m" ? "15 minutes" :
+                  permissionState.duration === "1h" ? "1 hour" : "this domain permanently";
+  b.textContent = `✓ Access granted to read active tab for ${durName}.`;
+});
+
+// Deny Permission Flow
+btnDeny.addEventListener("click", () => {
+  permissionState.status = "denied";
+  permissionState.expiresAt = null;
+  updatePermissionUI();
+  permissionOverlay.classList.add("hidden");
+  
+  const b = bubble("agent");
+  b.textContent = "✗ Tab permission denied. Page claims cannot be analyzed without access.";
+});
+
+// Open permission prompt when clicking badge
+permissionToggle.addEventListener("click", () => {
+  permissionOverlay.classList.remove("hidden");
+});
+
+// Real-time permission UI & timer updating
+function updatePermissionUI() {
+  if (permissionState.status === "granted" && (!permissionState.expiresAt || permissionState.expiresAt > new Date())) {
+    permissionToggle.classList.add("active");
+    permissionLabel.textContent = permissionState.duration === "always" ? "Always On" : "Access Active";
+    scanningBanner.classList.remove("hidden");
+  } else {
+    permissionToggle.classList.remove("active");
+    permissionLabel.textContent = "No Access";
+    scanningBanner.classList.add("hidden");
+    permissionState.status = "denied";
+  }
+}
+
+// Countdown timer tick
+setInterval(() => {
+  if (permissionState.status === "granted" && permissionState.expiresAt) {
+    const diff = permissionState.expiresAt.getTime() - new Date().getTime();
+    if (diff <= 0) {
+      permissionState.status = "denied";
+      permissionState.expiresAt = null;
+      updatePermissionUI();
+      const b = bubble("agent");
+      b.textContent = "⚠ Page read permission has expired. Please grant permission again to scan pages.";
+    } else {
+      if (permissionState.duration === "always") {
+        timeLeft.textContent = "∞";
+      } else {
+        const secsTotal = Math.floor(diff / 1000);
+        const mins = Math.floor(secsTotal / 60);
+        const secs = secsTotal % 60;
+        timeLeft.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }
+    }
+  }
+}, 1000);
+
+// "Scan Page" pill action
+btnScan.addEventListener("click", async () => {
+  if (permissionState.status !== "granted") {
+    permissionOverlay.classList.remove("hidden");
+    return;
+  }
+  
+  const activeTabKey = activeTabSelect.value;
+  const pageContent = MOCK_PAGES[activeTabKey];
+  const b = bubble("user");
+  b.textContent = `[Scan Request] Fact check the active tab: "${activeTabSelect.options[activeTabSelect.selectedIndex].text}"`;
+  
+  // Submit the active page content context directly
+  await sendChatMessage(`Here is the active browser page content I want you to read and fact-check. Please evaluate the claims inside this text, verify their facts, check for hallucination likelihood, and save the result to my catalog:\n\n${pageContent}`);
+});
+
+// Prompt startup dialog on load
+window.addEventListener("load", () => {
+  permissionOverlay.classList.remove("hidden");
+  const b = bubble("agent");
+  b.textContent = "Welcome to VeriFact AI! Grant tab access to analyze active page claims in real-time or try one of the quick prompts below.";
+});
+
+
+/* ----------------------------------------------------------------------------
+ * A2UI mini-renderer (v0.8 Basic Catalog subset).
+ * Renders Card / Column / Row / Text / Divider / List / Image / Icon.
+ * Anything else falls back to plain text (see renderReply). All text goes in via
+ * textContent and image URLs are validated, so agent output can't inject HTML.
+ * -------------------------------------------------------------------------- */
+
+function boundStr(v) {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v.literalString === "string") return v.literalString;
+  return "";
+}
+
+function childIds(props) {
+  const ids = [];
+  if (props && typeof props.child === "string") ids.push(props.child);
+  const ch = props && props.children;
+  if (ch && Array.isArray(ch.explicitList)) for (const c of ch.explicitList) if (typeof c === "string") ids.push(c);
+  return ids;
+}
+
+function iconName(n) { return String(n || "").replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/\s+/g, "_").toLowerCase(); }
+
+function buildNode(id, comps, seen) {
+  if (!id || seen.has(id)) return null;
+  seen.add(id);
+  const spec = comps[id];
+  if (!spec || typeof spec !== "object") return null;
+  const type = Object.keys(spec)[0];
+  const props = spec[type] || {};
+  const kids = () => childIds(props).map(cid => buildNode(cid, comps, seen)).filter(Boolean);
+
+  switch (type) {
+    case "Card": {
+      const d = el("div", "a2card"); kids().forEach(n => d.appendChild(n)); return d;
+    }
+    case "Column":
+    case "List": {
+      const horizontal = type === "List" && props.direction === "horizontal";
+      const d = el("div", horizontal ? "a2row" : "a2col"); kids().forEach(n => d.appendChild(n)); return d;
+    }
+    case "Row": {
+      const d = el("div", "a2row" + (props.distribution === "spaceBetween" ? " between" : ""));
+      kids().forEach(n => d.appendChild(n)); return d;
+    }
+    case "Text": {
+      const t = el("div", "a2text");
+      const hint = String(props.usageHint || "body").toLowerCase();
+      if (["h1", "h2", "h3", "h4", "h5", "h6"].includes(hint)) t.classList.add("a2-" + hint);
+      else if (hint === "caption") t.classList.add("a2-caption");
+      t.textContent = boundStr(props.text);
+      return t;
+    }
+    case "Divider":
+      return el("hr", "a2divider");
+    case "Image": {
+      const src = boundStr(props.url || props.src);
+      if (!/^https?:\/\//i.test(src)) return null;
+      const img = el("img", "a2img"); img.src = src; img.alt = boundStr(props.alt) || ""; return img;
+    }
+    case "Icon": {
+      const s = el("span", "material-symbols-outlined"); s.textContent = iconName(boundStr(props.name) || props.name); return s;
+    }
+    default:
+      return null;
+  }
+}
+
+function renderSurface(messages, container) {
+  const comps = {};
+  const roots = [];
+  for (const m of messages) {
+    if (m.beginRendering && typeof m.beginRendering.root === "string") roots.push(m.beginRendering.root);
+    const su = m.surfaceUpdate;
+    if (su && Array.isArray(su.components)) for (const c of su.components) if (c && c.id && c.component) comps[c.id] = c.component;
+  }
+  let rootIds = roots.filter(r => comps[r]);
+  if (rootIds.length === 0) {
+    const referenced = new Set();
+    for (const id in comps) { const spec = comps[id]; childIds(spec[Object.keys(spec)[0]] || {}).forEach(c => referenced.add(c)); }
+    rootIds = Object.keys(comps).filter(id => !referenced.has(id));
+  }
+  let drew = false;
+  for (const rid of rootIds) { const node = buildNode(rid, comps, new Set()); if (node) { container.appendChild(node); drew = true; } }
+  return drew;
+}
+
+function flattenText(messages) {
+  const out = [];
+  for (const m of messages) {
+    const su = m.surfaceUpdate;
+    if (su && Array.isArray(su.components)) for (const c of su.components) if (c && c.component && c.component.Text) out.push(boundStr(c.component.Text.text));
+  }
+  return out.join("\n").trim();
+}
+
+function renderReply(b, parts) {
+  b.textContent = "";
+  const texts = parts.filter(p => p && (p.kind === "text" || (!p.kind && p.text))).map(p => p.text || "");
+  const a2ui = parts.filter(p => p && p.kind === "a2ui" && p.data).map(p => p.data);
+
+  const textStr = texts.join("\n").trim();
+  if (textStr) b.appendChild(el("div", null, textStr));
+
+  if (a2ui.length) {
+    b.classList.add("rich");
+    if (!renderSurface(a2ui, b)) b.appendChild(el("div", null, flattenText(a2ui) || "(no card content)"));
+  }
+  if (!b.childNodes.length) b.textContent = "(no response)";
+  log.scrollTop = log.scrollHeight;
+}
+
+async function sendChatMessage(text) {
+  const b = bubble("agent"); b.textContent = "…";
+  try {
+    const res = await fetch("/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text }) });
+    const raw = await res.text();
+    let data;
+    try { data = JSON.parse(raw); }
+    catch { throw new Error(`Server returned non-JSON (HTTP ${res.status}). ${raw.slice(0, 300)}`); }
+    renderReply(b, data.parts || []);
+    
+    // If permission was "once", expire it now
+    if (permissionState.duration === "once") {
+      permissionState.status = "denied";
+      permissionState.expiresAt = null;
+      updatePermissionUI();
+    }
+  } catch (e) {
+    b.textContent = "Error: " + e.message;
+  }
+}
+
+form.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  bubble("user").textContent = text;
+  input.value = "";
+  
+  // Standard chat message, but automatically inject active page context if permission is active!
+  let queryPayload = text;
+  if (permissionState.status === "granted") {
+    const activeTabKey = activeTabSelect.value;
+    const pageContent = MOCK_PAGES[activeTabKey];
+    queryPayload = `[Background Context: The user has active tab reading enabled. Current page URL/tab is: "${activeTabSelect.options[activeTabSelect.selectedIndex].text}". Here is the active page content:\n\n${pageContent}]\n\nUser Question: ${text}`;
+  }
+  
+  await sendChatMessage(queryPayload);
+});
+
+// Auto-grant access in Playwright / headless automation tests
+if (navigator.webdriver) {
+  permissionOverlay.style.display = "none";
+  btnGrant.click();
+}
+</script>
+</body>
+</html>

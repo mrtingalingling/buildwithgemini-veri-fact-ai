@@ -1,0 +1,13 @@
+AI Fact-Checking Knowledge Base & Source Material
+
+1. Moon Landing (1969):
+The Apollo 11 mission landed humans on the Moon on July 20, 1969. Neil Armstrong and Buzz Aldrin were the first humans to walk on the Moon. There are no recorded human landings on Mars to date.
+
+2. Earth's Shape & Physics:
+The Earth is an oblate spheroid. Gravity acts toward the center of mass. Water boils at 100 degrees Celsius (212 degrees Fahrenheit) at standard atmospheric pressure (sea level).
+
+3. Human Brain Capacity Myth:
+It is a widespread myth that humans only use 10% of their brains. Brain imaging (fMRI) shows that virtually all parts of the brain have a function and are active almost all the time.
+
+4. AI Hallucination Guidelines:
+An AI hallucination occurs when a large language model generates false, misleading, or unsupported information as if it were factual. Common causes include unverified training data, pattern completion bias, and lack of real-time grounding. To evaluate hallucination likelihood, cross-reference claims against multiple independent, reputable primary sources.
