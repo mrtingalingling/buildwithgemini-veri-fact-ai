@@ -97,8 +97,9 @@ instruction = schema_manager.generate_system_prompt(
         "not have a public URL, add a short Text line noting the image instead. "
         "No markdown in text; use the usageHint property ('h1', 'h2', 'body') for "
         "headings and emphasis. "
-        "Output ONLY the raw A2UI JSON array — no prose, and never wrap it in "
-        "<a2a_datapart_json> tags or 'kind'/'data'/'metadata' objects."
+        "Proactively start with a brief, friendly conversational summary paragraph (prose) describing your findings, "
+        "and then include your structured A2UI JSON array containing components like Card, Column, Row, Text, and Image. "
+        "Never wrap the JSON array in <a2a_datapart_json> tags or 'kind'/'data'/'metadata' objects. Always format the JSON cleanly."
     ),
     include_schema=True,
     include_examples=True,

@@ -1081,8 +1081,59 @@ function flattenText(messages) {
 
 function renderReply(b, parts) {
   b.textContent = "";
-  const texts = parts.filter(p => p && (p.kind === "text" || (!p.kind && p.text))).map(p => p.text || "");
+  const texts = [];
   const a2ui = parts.filter(p => p && p.kind === "a2ui" && p.data).map(p => p.data);
+
+  for (const p of parts) {
+    if (!p) continue;
+    const txt = p.text || "";
+    if (p.kind === "text" || (!p.kind && txt)) {
+      if (txt.includes("beginRendering") || txt.includes("surfaceUpdate") || txt.includes("dataModelUpdate")) {
+        try {
+          let cleanTxt = txt.trim();
+          if (cleanTxt.startsWith("```")) {
+            const lines = cleanTxt.split("\n");
+            lines.shift();
+            if (lines.length > 0 && lines[lines.length - 1].trim() === "```") {
+              lines.pop();
+            }
+            cleanTxt = lines.join("\n").trim();
+          }
+
+          const firstChar = cleanTxt.match(/[\{\[]/);
+          if (firstChar) {
+            const startIdx = cleanTxt.indexOf(firstChar[0]);
+            let prose = cleanTxt.slice(0, startIdx).trim();
+            const proseLines = prose.split("\n");
+            if (proseLines.length > 0 && proseLines[proseLines.length - 1].trim().startsWith("```")) {
+              proseLines.pop();
+            }
+            prose = proseLines.join("\n").trim();
+
+            if (prose) {
+              texts.push(prose);
+            }
+
+            const jsonStr = cleanTxt.slice(startIdx);
+            const parsed = JSON.parse(jsonStr);
+            if (Array.isArray(parsed)) {
+              a2ui.push(...parsed);
+            } else if (parsed && typeof parsed === "object") {
+              if (parsed.kind === "data" && parsed.data) {
+                a2ui.push(parsed.data);
+              } else {
+                a2ui.push(parsed);
+              }
+            }
+            continue;
+          }
+        } catch (e) {
+          console.warn("Failed to parse inline A2UI JSON from text part:", e);
+        }
+      }
+      texts.push(txt);
+    }
+  }
 
   const textStr = texts.join("\n").trim();
   if (textStr) b.appendChild(el("div", null, textStr));

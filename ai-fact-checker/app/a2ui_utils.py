@@ -217,6 +217,30 @@ def _surface_is_renderable(messages: list[dict]) -> bool:
     return True
 
 
+def _extract_prose_and_json(text: str) -> tuple[str, str]:
+    """Split the text into conversational prose (if any) and the raw JSON block."""
+    first_idx = -1
+    for char in ('[', '{'):
+        idx = text.find(char)
+        if idx != -1:
+            if first_idx == -1 or idx < first_idx:
+                first_idx = idx
+                
+    if first_idx == -1:
+        return text, ""
+        
+    prose = text[:first_idx].strip()
+    json_block = text[first_idx:].strip()
+    
+    # Clean up trailing markdown fence headers in prose
+    lines = prose.split("\n")
+    if lines and lines[-1].strip().startswith("```"):
+        lines.pop()
+    prose = "\n".join(lines).strip()
+    
+    return prose, json_block
+
+
 def a2ui_callback(
     callback_context: CallbackContext,
     llm_response: LlmResponse,
@@ -225,17 +249,31 @@ def a2ui_callback(
     if not llm_response.content or not llm_response.content.parts:
         return None
 
+    new_parts = []
+    modified = False
+
     for part in llm_response.content.parts:
         text = (part.text or "").strip()
         if not text:
+            new_parts.append(part)
             continue
+            
         # Cheap gate: only touch parts that look like A2UI, leave prose alone.
         if not any(k in text for k in _A2UI_KEYS):
+            new_parts.append(part)
             continue
 
-        messages = _extract_a2ui_messages(text)
+        prose, json_block = _extract_prose_and_json(text)
+        messages = _extract_a2ui_messages(json_block or text)
         if not messages:
+            new_parts.append(part)
             continue
+
+        modified = True
+        
+        # If there is conversational prose, add it as a clean text part first!
+        if prose:
+            new_parts.append(types.Part(text=prose))
 
         # Turn un-fetchable <Image> URLs into a text note (no broken-image icons).
         _sanitize_image_components(messages)
@@ -244,13 +282,11 @@ def a2ui_callback(
             # We recognized A2UI but couldn't recover a renderable surface — the
             # model emitted invalid JSON, a missing surface body, or an undefined
             # root/child reference. Return clean text instead of a blank card.
-            return LlmResponse(
-                content=types.Content(
-                    role="model", parts=[types.Part(text=_FALLBACK_TEXT)]
-                )
-            )
+            new_parts.append(types.Part(text=_FALLBACK_TEXT))
+        else:
+            new_parts.extend([_wrap_a2ui_part(m) for m in messages])
 
-        new_parts = [_wrap_a2ui_part(m) for m in messages]
+    if modified:
         return LlmResponse(
             content=types.Content(role="model", parts=new_parts),
             custom_metadata={"a2a:response": "true"},
