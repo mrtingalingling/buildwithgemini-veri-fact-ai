@@ -1090,7 +1090,7 @@ function renderReply(b, parts) {
     if (p.kind === "text" || (!p.kind && txt)) {
       if (txt.includes("beginRendering") || txt.includes("surfaceUpdate") || txt.includes("dataModelUpdate")) {
         try {
-          let cleanTxt = txt.trim();
+          let cleanTxt = txt.replace(/<\/?(?:a2a_datapart_json|a2ui-json)>/g, "").trim();
           if (cleanTxt.startsWith("```")) {
             const lines = cleanTxt.split("\n");
             lines.shift();

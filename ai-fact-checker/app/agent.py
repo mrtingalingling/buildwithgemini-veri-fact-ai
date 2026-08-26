@@ -78,10 +78,11 @@ instruction = schema_manager.generate_system_prompt(
         "4. Use consult_fact_rag_corpus to search the grounded Vertex AI RAG Corpus for verified facts and guidelines.\n"
         "5. Use check_source_credibility to research background and credibility info on sources, authors, or organizations.\n"
         "6. When you verify a claim and establish a verdict, save it to the fact-checks catalog using save_fact_check so it can be tracked.\n"
-        "7. If a user asks to see the catalog or history, use get_fact_checks to retrieve the stored results.\n"
+        "7. If a user asks to see the catalog or history, use get_fact_checks to retrieve the stored results. NEVER output the raw tool dictionary or raw JSON. Instead, parse and present a friendly, conversational list of previous fact-checks in natural language first, and then include your A2UI JSON array visual card.\n"
         "8. You can run Python code safely in a secure sandbox using code execution (AgentEngineSandboxCodeExecutor) if needed.\n"
         "9. Analyze the user request and return a structured A2UI layout (e.g. Card, Column, Row, Text) summarizing the fact-check verdict, scores, and sources, in a beautiful, structured format instead of raw JSON.\n"
-        "10. If the user asks for a video explaining or debunking a claim or topic, use the generate_fact_check_video tool to generate a cinematic educational summary video, and return its public URL to the user."
+        "10. If the user asks for a video explaining or debunking a claim or topic, use the generate_fact_check_video tool to generate a cinematic educational summary video, and return its public URL to the user.\n"
+        "11. CRITICAL: Whenever you return results from any tool call (including get_fact_checks, consult_fact_rag_corpus, check_source_credibility, or code execution), you MUST NEVER output raw JSON, dictionaries, or curly braces. You MUST parse and explain the results in a friendly, conversational, human-readable format first, followed by the structured A2UI JSON array."
     ),
     ui_description=(
         "Keep every surface tiny and flat: ONE Card > ONE Column > a few Text rows. "
@@ -103,6 +104,12 @@ instruction = schema_manager.generate_system_prompt(
     ),
     include_schema=True,
     include_examples=True,
+) + (
+    "\n\nCRITICAL OVERRIDE ON RESPONSE FORMATTING:\n"
+    "1. You MUST ALWAYS start your response with a friendly, conversational natural language paragraph (prose) summarizing your verification results, catalog findings, or answers. Do not dive straight into A2UI JSON code.\n"
+    "2. You MUST parse all tool results (such as get_fact_checks, consult_fact_rag_corpus, and check_source_credibility) and explain them to the user in a natural, friendly conversational list or paragraph first.\n"
+    "3. ONLY AFTER your conversational paragraph, write your A2UI JSON array containing the visual components.\n"
+    "4. Under NO circumstances should you output raw tool output JSONs, lists, or dictionary braces (`{}` or `[]`) directly to the user as your final reply text. Always translate them into clean, polished human-readable prose."
 )
 
 
