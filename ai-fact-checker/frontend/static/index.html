@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VeriFact AI - Chrome Extension</title>
+<title>VeriFact AI - Real-time Fact Checker</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0b0d17">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/icons/icon192.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -922,6 +928,9 @@
         <button id="themeToggle" class="btn-theme" title="Toggle OLED black mode" style="margin-left: 0.4rem;">
           <span class="material-symbols-outlined" style="font-size: 1rem;">dark_mode</span>
         </button>
+        <button id="btnInstallPWA" class="btn-theme" title="Install VeriFact AI App" style="margin-left: 0.4rem; display: none; background: rgba(0, 245, 212, 0.15); border-color: var(--accent); color: var(--accent);">
+          <span class="material-symbols-outlined" style="font-size: 1rem;">install_desktop</span>
+        </button>
       </div>
       <div id="permissionToggle" class="permission-status">
         <div class="status-dot"></div>
@@ -1738,6 +1747,37 @@ btnAddCatalog.addEventListener("click", async () => {
 // Initialize sources on load
 window.addEventListener("load", () => {
   renderSources();
+});
+
+// Service Worker Registration for PWA Support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then((reg) => console.log('ServiceWorker registered successfully with scope:', reg.scope))
+      .catch((err) => console.warn('ServiceWorker registration failed:', err));
+  });
+}
+
+// PWA Install Prompt Handling
+let deferredPrompt;
+const btnInstallPWA = document.getElementById('btnInstallPWA');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (btnInstallPWA) {
+    btnInstallPWA.style.display = 'inline-flex';
+    btnInstallPWA.addEventListener('click', () => {
+      btnInstallPWA.style.display = 'none';
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the PWA installation');
+        }
+        deferredPrompt = null;
+      });
+    });
+  }
 });
 
 // Auto-grant access in Playwright / headless automation tests
