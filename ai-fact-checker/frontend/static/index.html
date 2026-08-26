@@ -941,19 +941,31 @@
     </div>
   </header>
 
-  <!-- NotebookLM Source Control Center -->
+  <!-- Gemini & Workspace Source Control Center -->
   <div class="source-panel">
     <div class="source-header" id="sourceHeader">
       <div class="source-title">
-        <span class="material-symbols-outlined" style="font-size: 1rem; color: var(--accent);">folder_shared</span>
-        <span>NotebookLM Reference Sources</span>
+        <span class="material-symbols-outlined" style="font-size: 1rem; color: var(--accent);">cloud_sync</span>
+        <span>Gemini & Google Workspace Sources</span>
       </div>
       <span id="sourceToggleIcon" class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--text-muted)">expand_more</span>
     </div>
     <div id="sourceBody" class="source-body hidden">
-      <div class="add-source-form">
-        <input type="text" id="customFactInput" placeholder="Add custom fact... (factual only to you)" autocomplete="off">
-        <button id="btnAddFact" type="button" class="btn-add-fact">Add</button>
+      <div class="add-source-form" style="display: flex; gap: 0.5rem; flex-direction: column; width: 100%;">
+        <div style="display: flex; gap: 0.5rem; width: 100%;">
+          <input type="text" id="customFactInput" placeholder="Add custom fact or link..." autocomplete="off" style="flex: 1; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; color: var(--text); font-size: 0.8rem; outline: none;">
+          <button id="btnAddFact" type="button" class="btn-add-fact">Add</button>
+        </div>
+        <div style="display: flex; gap: 0.5rem; width: 100%;">
+          <button id="btnWorkspaceDoc" type="button" class="btn-add-fact" style="flex: 1; background: rgba(66, 133, 244, 0.12); color: #fff; border: 1px solid rgba(66, 133, 244, 0.35); padding: 0.45rem; font-size: 0.74rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+            <span class="material-symbols-outlined" style="font-size: 0.9rem; color: #4285F4;">description</span>
+            Link Google Doc
+          </button>
+          <button id="btnWorkspaceSheet" type="button" class="btn-add-fact" style="flex: 1; background: rgba(52, 168, 83, 0.12); color: #fff; border: 1px solid rgba(52, 168, 83, 0.35); padding: 0.45rem; font-size: 0.74rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+            <span class="material-symbols-outlined" style="font-size: 0.9rem; color: #34A853;">table_chart</span>
+            Link Google Sheet
+          </button>
+        </div>
       </div>
       <div class="source-list" id="sourceList">
         <!-- Populated dynamically via javascript -->
@@ -1531,12 +1543,14 @@ const sourceToggleIcon = document.getElementById("sourceToggleIcon");
 const sourceList = document.getElementById("sourceList");
 const customFactInput = document.getElementById("customFactInput");
 const btnAddFact = document.getElementById("btnAddFact");
+const btnWorkspaceDoc = document.getElementById("btnWorkspaceDoc");
+const btnWorkspaceSheet = document.getElementById("btnWorkspaceSheet");
 
-// Initial mock NotebookLM reference sources
+// Initial mock Gemini & Workspace reference sources
 let personalSources = [
-  { id: 1, text: "The Apollo 11 moon mission successfully landed on July 20, 1969.", active: true },
-  { id: 2, text: "VeriFact AI utilizes advanced machine learning scoring for verification.", active: true },
-  { id: 3, text: "Google Cloud Vertex AI is a fully managed agent development platform.", active: true }
+  { id: 1, text: "Google Docs: Apollo_11_Grounded_Telemetry.gdoc (The Apollo 11 moon mission successfully landed on July 20, 1969.)", active: true },
+  { id: 2, text: "Google Sheets: Fact_Checker_Algorithms_Matrix.gsheet (VeriFact AI utilizes advanced machine learning scoring for verification.)", active: true },
+  { id: 3, text: "Google Docs: Vertex_Platform_Guide.gdoc (Google Cloud Vertex AI is a fully managed agent development platform.)", active: true }
 ];
 
 // Toggle source panel open/closed
@@ -1624,17 +1638,47 @@ async function addCustomFact() {
   await syncActivePremises();
 }
 
+// Google Doc Integration Action
+btnWorkspaceDoc.addEventListener("click", async () => {
+  const docPresets = [
+    "Google Docs: Project_Grounded_Claims_2026.gdoc (Verified telemetry data: All SpaceX Mars claims in 2024 are fully simulated and fictional.)",
+    "Google Docs: Corporate_Verified_Facts.gdoc (Official guideline: VeriFact AI runs strictly on Google Cloud platform.)",
+    "Google Docs: Science_Digest_Climate.gdoc (Scientific consensus: Earth is a perfect oblate spheroid.)"
+  ];
+  const preset = docPresets[personalSources.length % docPresets.length];
+  
+  const newId = personalSources.length ? Math.max(...personalSources.map(s => s.id)) + 1 : 1;
+  personalSources.push({ id: newId, text: preset, active: true });
+  renderSources();
+  await syncActivePremises();
+});
+
+// Google Sheet Integration Action
+btnWorkspaceSheet.addEventListener("click", async () => {
+  const sheetPresets = [
+    "Google Sheets: Verified_Fact_Matrix_Q4.gsheet (Contains 100 rows of official climate and astronomical verified reference truths.)",
+    "Google Sheets: Hallucination_Control_Database.gsheet (Contains threshold parameters for Fact-Checking score algorithms.)",
+    "Google Sheets: Historical_Anomalies.gsheet (Contains list of debunked internet hoaxes and historical timeline metrics.)"
+  ];
+  const preset = sheetPresets[personalSources.length % sheetPresets.length];
+  
+  const newId = personalSources.length ? Math.max(...personalSources.map(s => s.id)) + 1 : 1;
+  personalSources.push({ id: newId, text: preset, active: true });
+  renderSources();
+  await syncActivePremises();
+});
+
 // Sync active reference sources to the backend agent session
 async function syncActivePremises() {
   const activeTexts = personalSources.filter(s => s.active).map(s => s.text);
   const b = bubble("user");
-  b.textContent = `[NotebookLM] Syncing ${activeTexts.length} active reference source(s)...`;
+  b.textContent = `[Gemini & Workspace] Syncing ${activeTexts.length} active reference source(s)...`;
   
   // Submit premise update request to agent
   await sendChatMessage(
-    `[NotebookLM Source Control Update] I have updated my reference sources in the UI. ` +
+    `[Gemini & Workspace Source Control Update] I have updated my reference sources in the UI. ` +
     `Please set my active scenario premises for this session to: ${JSON.stringify(activeTexts)}. ` +
-    `Let me know that my custom references are successfully loaded for future fact-checking!`
+    `Let me know that my custom Workspace references are successfully loaded for future fact-checking!`
   );
 }
 
