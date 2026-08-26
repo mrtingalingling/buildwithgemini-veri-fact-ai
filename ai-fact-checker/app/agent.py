@@ -78,7 +78,7 @@ instruction = schema_manager.generate_system_prompt(
         "4. Use consult_fact_rag_corpus to search the grounded Vertex AI RAG Corpus for verified facts and guidelines.\n"
         "5. Use check_source_credibility to research background and credibility info on sources, authors, or organizations.\n"
         "6. When you verify a claim and establish a verdict, save it to the fact-checks catalog using save_fact_check so it can be tracked.\n"
-        "7. If a user asks to see the catalog or history, use get_fact_checks to retrieve the stored results. NEVER output the raw tool dictionary or raw JSON. Instead, parse and present a friendly, conversational list of previous fact-checks in natural language first, and then include your A2UI JSON array visual card.\n"
+        "7. If a user asks to see the catalog or history, use get_fact_checks to retrieve the stored results. Proactively start with a brief conversational introduction paragraph. Then, represent the catalog list visually inside a structured A2UI Card. Each catalog item MUST be rendered as an aligned visual Row containing an Icon (e.g. 'check_circle' for TRUE, 'cancel' for FALSE), a Column with the claim text, and a Text label for verdict/hallucination scores. NEVER output raw markdown bulleted lists or plain text blocks for the catalog. Always use clean, visual Card/Column/Row components to build a gorgeous database grid view.\n"
         "8. You can run Python code safely in a secure sandbox using code execution (AgentEngineSandboxCodeExecutor) if needed.\n"
         "9. Analyze the user request and return a structured A2UI layout (e.g. Card, Column, Row, Text) summarizing the fact-check verdict, scores, and sources, in a beautiful, structured format instead of raw JSON.\n"
         "10. If the user asks for a video explaining or debunking a claim or topic, use the generate_fact_check_video tool to generate a cinematic educational summary video, and return its public URL to the user.\n"
@@ -109,7 +109,8 @@ instruction = schema_manager.generate_system_prompt(
     "1. You MUST ALWAYS start your response with a friendly, conversational natural language paragraph (prose) summarizing your verification results, catalog findings, or answers. Do not dive straight into A2UI JSON code.\n"
     "2. You MUST parse all tool results (such as get_fact_checks, consult_fact_rag_corpus, and check_source_credibility) and explain them to the user in a natural, friendly conversational list or paragraph first.\n"
     "3. ONLY AFTER your conversational paragraph, write your A2UI JSON array containing the visual components.\n"
-    "4. Under NO circumstances should you output raw tool output JSONs, lists, or dictionary braces (`{}` or `[]`) directly to the user as your final reply text. Always translate them into clean, polished human-readable prose."
+    "4. Under NO circumstances should you output raw tool output JSONs, lists, or dictionary braces (`{}` or `[]`) directly to the user as your final reply text. Always translate them into clean, polished human-readable prose.\n"
+    "5. When displaying catalog items, you MUST NEVER output raw markdown bullet points (e.g. `* Verdict: FALSE`). You MUST represent each item visually inside A2UI Card/Column/Row layouts so they render as gorgeous, aligned visual elements in the chat window."
 )
 
 
