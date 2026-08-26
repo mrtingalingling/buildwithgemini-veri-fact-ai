@@ -434,6 +434,12 @@
   .a2text.a2-h4 { font-size: 0.95rem; font-weight: 600; }
   .a2text.a2-caption { font-size: 0.8rem; color: var(--text-muted); }
   
+  .prose-content { line-height: 1.5; font-size: 0.88rem; width: 100%; }
+  .prose-content ul, .a2text ul { margin: 0.4rem 0 0.4rem 1.1rem; padding: 0; list-style-type: disc; }
+  .prose-content li, .a2text li { margin-bottom: 0.35rem; line-height: 1.4; color: var(--text-muted); }
+  .prose-content li strong, .a2text li strong { color: #fff; font-weight: 600; }
+  .prose-content br { content: ""; display: block; margin-bottom: 0.25rem; }
+  
   .a2divider { border: none; border-top: 1px solid var(--border); margin: 0.5rem 0; width: 100%; }
   .a2img { max-width: 100%; border-radius: 10px; display: block; border: 1px solid var(--border); }
   
@@ -821,6 +827,59 @@ Content: It is a commonly repeated belief that humans use only 10% of their brai
 Content: Our local fact-check database registers claims for quick matching. The flat earth claim holds a 'FALSE' verdict with high hallucination likelihood. The 10% brain myth also possesses a 'FALSE' verdict. Seeded entries provide quick answers about verified factual reports.`
 };
 
+function parseMarkdown(text) {
+  if (!text) return "";
+  
+  // 1. Escape HTML to prevent XSS injection
+  let html = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+    
+  // 2. Headings (### -> h3, ## -> h2, # -> h1)
+  html = html.replace(/^(?:###)\s+(.*?)$/gm, "<h3>$1</h3>");
+  html = html.replace(/^(?:##)\s+(.*?)$/gm, "<h2>$1</h2>");
+  html = html.replace(/^(?:#)\s+(.*?)$/gm, "<h1>$1</h1>");
+  
+  // 3. Bold (**text** or __text__)
+  html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/__(.*?)__/g, "<strong>$1</strong>");
+  
+  // 4. Italic (*text* or _text_)
+  html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
+  html = html.replace(/_(.*?)_/g, "<em>$1</em>");
+  
+  // 5. Code blocks (```code block```)
+  html = html.replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>");
+  
+  // 6. Inline code (`code`)
+  html = html.replace(/`(.*?)`/g, "<code>$1</code>");
+  
+  // 7. Bullet points: convert lines starting with * or - followed by a space into list items.
+  html = html.replace(/^[*\-]\s+(.*?)$/gm, "<li>$1</li>");
+  
+  // Wrap contiguous <li> lines in a <ul> tag.
+  html = html.replace(/(<li>[\s\S]*?<\/li>)/g, "<ul>$1</ul>");
+  // Clean up nested ul: remove "</ul>\n<ul>"
+  html = html.replace(/<\/ul>\s*<ul>/g, "");
+  
+  // 8. Line breaks: replace remaining \n with <br>, except after block tags
+  html = html.split("\n").map(line => {
+    const trimmed = line.trim();
+    if (trimmed.endsWith("</h3>") || 
+        trimmed.endsWith("</h2>") || 
+        trimmed.endsWith("</h1>") || 
+        trimmed.endsWith("</ul>") || 
+        trimmed.endsWith("</pre>") ||
+        trimmed.endsWith("</li>")) {
+      return line;
+    }
+    return line + "<br>";
+  }).join("\n");
+  
+  return html;
+}
+
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
 // Clickable prompts helper function
@@ -1033,7 +1092,7 @@ function buildNode(id, comps, seen) {
       const hint = String(props.usageHint || "body").toLowerCase();
       if (["h1", "h2", "h3", "h4", "h5", "h6"].includes(hint)) t.classList.add("a2-" + hint);
       else if (hint === "caption") t.classList.add("a2-caption");
-      t.textContent = boundStr(props.text);
+      t.innerHTML = parseMarkdown(boundStr(props.text));
       return t;
     }
     case "Divider":
@@ -1136,11 +1195,19 @@ function renderReply(b, parts) {
   }
 
   const textStr = texts.join("\n").trim();
-  if (textStr) b.appendChild(el("div", null, textStr));
+  if (textStr) {
+    const textEl = el("div", "prose-content");
+    textEl.innerHTML = parseMarkdown(textStr);
+    b.appendChild(textEl);
+  }
 
   if (a2ui.length) {
     b.classList.add("rich");
-    if (!renderSurface(a2ui, b)) b.appendChild(el("div", null, flattenText(a2ui) || "(no card content)"));
+    if (!renderSurface(a2ui, b)) {
+      const fbEl = el("div", "prose-content");
+      fbEl.innerHTML = parseMarkdown(flattenText(a2ui) || "(no card content)");
+      b.appendChild(fbEl);
+    }
   }
   if (!b.childNodes.length) b.textContent = "(no response)";
   log.scrollTop = log.scrollHeight;
