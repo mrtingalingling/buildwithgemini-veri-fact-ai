@@ -1417,11 +1417,13 @@ function renderReply(b, parts) {
 
   for (const p of parts) {
     if (!p) continue;
-    const txt = p.text || "";
+    let txt = p.text || "";
+    // Clean all visual wrapper tags immediately from all text parts to avoid leakage
+    txt = txt.replace(/<\/?(?:a2a[-_]?datapart[-_]?json|a2ui[-_]?json|a2adatapartjson)>/gi, "").trim();
     if (p.kind === "text" || (!p.kind && txt)) {
       if (txt.includes("beginRendering") || txt.includes("surfaceUpdate") || txt.includes("dataModelUpdate")) {
         try {
-          let cleanTxt = txt.replace(/<\/?(?:a2a_datapart_json|a2ui-json)>/g, "").trim();
+          let cleanTxt = txt;
           if (cleanTxt.startsWith("```")) {
             const lines = cleanTxt.split("\n");
             lines.shift();
