@@ -952,11 +952,11 @@
 
   <!-- Column Level Icon-Based Control Center Grid -->
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); background: rgba(17, 19, 30, 0.4);">
-    <!-- Workspace Sources Column Card Header -->
+    <!-- Sources Column Card Header -->
     <div id="sourceHeader" class="source-header" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem 0.65rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
       <div class="source-title" style="display: flex; align-items: center; gap: 0.4rem; overflow: hidden;">
         <span class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--accent); flex-shrink: 0;">cloud_sync</span>
-        <span style="font-size: 0.75rem; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Workspace Sources</span>
+        <span style="font-size: 0.75rem; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Sources</span>
       </div>
       <span id="sourceToggleIcon" class="material-symbols-outlined" style="font-size: 1rem; color: var(--text-muted); flex-shrink: 0;">expand_more</span>
     </div>
@@ -1685,11 +1685,11 @@ btnWorkspaceSheet.addEventListener("click", async () => {
 async function syncActivePremises() {
   const activeTexts = personalSources.filter(s => s.active).map(s => s.text);
   const b = bubble("user");
-  b.textContent = `[Gemini & Workspace] Syncing ${activeTexts.length} active reference source(s)...`;
+  b.textContent = `[Sources] Syncing ${activeTexts.length} active reference source(s)...`;
   
   // Submit premise update request to agent
   await sendChatMessage(
-    `[Gemini & Workspace Source Control Update] I have updated my reference sources in the UI. ` +
+    `[Sources Control Update] I have updated my reference sources in the UI. ` +
     `Please set my active scenario premises for this session to: ${JSON.stringify(activeTexts)}. ` +
     `Let me know that my custom Workspace references are successfully loaded for future fact-checking!`
   );

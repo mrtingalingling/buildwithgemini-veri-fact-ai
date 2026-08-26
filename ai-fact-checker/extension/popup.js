@@ -224,9 +224,9 @@ btnWorkspaceSheet.addEventListener("click", async () => {
 async function syncActivePremises() {
   const activeTexts = personalSources.filter(s => s.active).map(s => s.text);
   const b = bubble("user");
-  b.textContent = `[Gemini & Workspace] Syncing ${activeTexts.length} active reference source(s)...`;
+  b.textContent = `[Sources] Syncing ${activeTexts.length} active reference source(s)...`;
   await sendChatMessage(
-    `[Gemini & Workspace Source Control Update] I have updated my reference sources in the UI. ` +
+    `[Sources Control Update] I have updated my reference sources in the UI. ` +
     `Please set my active scenario premises for this session to: ${JSON.stringify(activeTexts)}.`
   );
 }
