@@ -950,66 +950,68 @@
     </div>
   </header>
 
-  <!-- Gemini & Workspace Source Control Center -->
-  <div class="source-panel">
-    <div class="source-header" id="sourceHeader">
-      <div class="source-title">
-        <span class="material-symbols-outlined" style="font-size: 1rem; color: var(--accent);">cloud_sync</span>
-        <span>Gemini & Google Workspace Sources</span>
+  <!-- Column Level Icon-Based Control Center Grid -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); background: rgba(17, 19, 30, 0.4);">
+    <!-- Workspace Sources Column Card Header -->
+    <div id="sourceHeader" class="source-header" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem 0.65rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
+      <div class="source-title" style="display: flex; align-items: center; gap: 0.4rem; overflow: hidden;">
+        <span class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--accent); flex-shrink: 0;">cloud_sync</span>
+        <span style="font-size: 0.75rem; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Workspace Sources</span>
       </div>
-      <span id="sourceToggleIcon" class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--text-muted)">expand_more</span>
+      <span id="sourceToggleIcon" class="material-symbols-outlined" style="font-size: 1rem; color: var(--text-muted); flex-shrink: 0;">expand_more</span>
     </div>
-    <div id="sourceBody" class="source-body hidden">
-      <div class="add-source-form" style="display: flex; gap: 0.5rem; flex-direction: column; width: 100%;">
-        <div style="display: flex; gap: 0.5rem; width: 100%;">
-          <input type="text" id="customFactInput" placeholder="Add custom fact or link..." autocomplete="off" style="flex: 1; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; color: var(--text); font-size: 0.8rem; outline: none;">
-          <button id="btnAddFact" type="button" class="btn-add-fact">Add</button>
-        </div>
-        <div style="display: flex; gap: 0.5rem; width: 100%;">
-          <button id="btnWorkspaceDoc" type="button" class="btn-add-fact" style="flex: 1; background: rgba(66, 133, 244, 0.12); color: #fff; border: 1px solid rgba(66, 133, 244, 0.35); padding: 0.45rem; font-size: 0.74rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
-            <span class="material-symbols-outlined" style="font-size: 0.9rem; color: #4285F4;">description</span>
-            Link Google Doc
-          </button>
-          <button id="btnWorkspaceSheet" type="button" class="btn-add-fact" style="flex: 1; background: rgba(52, 168, 83, 0.12); color: #fff; border: 1px solid rgba(52, 168, 83, 0.35); padding: 0.45rem; font-size: 0.74rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
-            <span class="material-symbols-outlined" style="font-size: 0.9rem; color: #34A853;">table_chart</span>
-            Link Google Sheet
-          </button>
-        </div>
+
+    <!-- Fact Catalog Column Card Header -->
+    <div id="catalogHeader" class="source-header" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem 0.65rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
+      <div class="source-title" style="display: flex; align-items: center; gap: 0.4rem; overflow: hidden;">
+        <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #00bbf9; flex-shrink: 0;">database</span>
+        <span style="font-size: 0.75rem; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Fact Catalog</span>
       </div>
-      <div class="source-list" id="sourceList">
-        <!-- Populated dynamically via javascript -->
-      </div>
+      <span id="catalogToggleIcon" class="material-symbols-outlined" style="font-size: 1rem; color: var(--text-muted); flex-shrink: 0;">expand_more</span>
     </div>
   </div>
 
-  <!-- Fact Catalog Manager Panel -->
-  <div class="source-panel" style="border-top: none;">
-    <div class="source-header" id="catalogHeader">
-      <div class="source-title">
-        <span class="material-symbols-outlined" style="font-size: 1rem; color: var(--accent);">database</span>
-        <span>Fact Catalog Manager</span>
-      </div>
-      <span id="catalogToggleIcon" class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--text-muted)">expand_more</span>
-    </div>
-    <div id="catalogBody" class="source-body hidden">
-      <div class="add-source-form" style="flex-direction: column; gap: 0.5rem; display: flex;">
-        <input type="text" id="catalogClaimInput" placeholder="Enter claim to add to database..." autocomplete="off" style="width: 100%;">
-        <div style="display: flex; gap: 0.5rem; width: 100%; align-items: center;">
-          <select id="catalogVerdictSelect" style="flex: 1.2; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; color: var(--text); font-size: 0.8rem; outline: none;">
-            <option value="True">Verdict: True</option>
-            <option value="False">Verdict: False</option>
-            <option value="Misleading">Verdict: Misleading</option>
-          </select>
-          <input type="number" id="catalogConfidenceInput" placeholder="Conf. (0-100)" min="0" max="100" style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; color: var(--text); font-size: 0.8rem; outline: none;" value="95">
-          <button id="btnAddCatalog" type="button" class="btn-add-fact" style="flex: 1; padding: 0.4rem 0.6rem; border-radius: 8px; font-size: 0.78rem;">Save Check</button>
-        </div>
+  <!-- Expandable Body Content Triggers -->
+  <div id="sourceBody" class="source-body hidden" style="padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); background: rgba(9, 10, 16, 0.6);">
+    <div class="add-source-form" style="display: flex; gap: 0.5rem; flex-direction: column; width: 100%;">
+      <div style="display: flex; gap: 0.5rem; width: 100%;">
+        <input type="text" id="customFactInput" placeholder="Add custom fact or link..." autocomplete="off" style="flex: 1; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; color: var(--text); font-size: 0.8rem; outline: none;">
+        <button id="btnAddFact" type="button" class="btn-add-fact">Add</button>
       </div>
       <div style="display: flex; gap: 0.5rem; width: 100%;">
-        <button id="btnFetchCatalog" type="button" class="btn-add-fact" style="flex: 1; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); padding: 0.55rem; font-size: 0.78rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
-          <span class="material-symbols-outlined" style="font-size:0.95rem;">pageview</span>
-          Fetch Database Catalog
+        <button id="btnWorkspaceDoc" type="button" class="btn-add-fact" style="flex: 1; background: rgba(66, 133, 244, 0.12); color: #fff; border: 1px solid rgba(66, 133, 244, 0.35); padding: 0.45rem; font-size: 0.74rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span class="material-symbols-outlined" style="font-size: 0.9rem; color: #4285F4;">description</span>
+          Link Google Doc
+        </button>
+        <button id="btnWorkspaceSheet" type="button" class="btn-add-fact" style="flex: 1; background: rgba(52, 168, 83, 0.12); color: #fff; border: 1px solid rgba(52, 168, 83, 0.35); padding: 0.45rem; font-size: 0.74rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span class="material-symbols-outlined" style="font-size: 0.9rem; color: #34A853;">table_chart</span>
+          Link Google Sheet
         </button>
       </div>
+    </div>
+    <div class="source-list" id="sourceList">
+      <!-- Populated dynamically via javascript -->
+    </div>
+  </div>
+
+  <div id="catalogBody" class="source-body hidden" style="padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); background: rgba(9, 10, 16, 0.6);">
+    <div class="add-source-form" style="flex-direction: column; gap: 0.5rem; display: flex;">
+      <input type="text" id="catalogClaimInput" placeholder="Enter claim to add to database..." autocomplete="off" style="width: 100%;">
+      <div style="display: flex; gap: 0.5rem; width: 100%; align-items: center;">
+        <select id="catalogVerdictSelect" style="flex: 1.2; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; color: var(--text); font-size: 0.8rem; outline: none;">
+          <option value="True">Verdict: True</option>
+          <option value="False">Verdict: False</option>
+          <option value="Misleading">Verdict: Misleading</option>
+        </select>
+        <input type="number" id="catalogConfidenceInput" placeholder="Conf. (0-100)" min="0" max="100" style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; color: var(--text); font-size: 0.8rem; outline: none;" value="95">
+        <button id="btnAddCatalog" type="button" class="btn-add-fact" style="flex: 1; padding: 0.4rem 0.6rem; border-radius: 8px; font-size: 0.78rem;">Save Check</button>
+      </div>
+    </div>
+    <div style="display: flex; gap: 0.5rem; width: 100%;">
+      <button id="btnFetchCatalog" type="button" class="btn-add-fact" style="flex: 1; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); padding: 0.55rem; font-size: 0.78rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+        <span class="material-symbols-outlined" style="font-size:0.95rem;">pageview</span>
+        Fetch Database Catalog
+      </button>
     </div>
   </div>
 
