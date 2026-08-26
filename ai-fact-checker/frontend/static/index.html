@@ -693,6 +693,173 @@
   .btn-deny:hover {
     background: rgba(255, 255, 255, 0.08);
   }
+
+  /* NotebookLM Source Control Center */
+  .source-panel {
+    background: rgba(255, 255, 255, 0.01);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    transition: all 0.3s ease;
+  }
+  .source-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 1.2rem;
+    cursor: pointer;
+    user-select: none;
+    background: rgba(17, 19, 30, 0.4);
+  }
+  .source-header:hover {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .source-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+  .source-body {
+    padding: 0.8rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    border-top: 1px solid var(--border);
+    background: rgba(9, 10, 16, 0.5);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .source-body.hidden {
+    display: none;
+  }
+  .add-source-form {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .add-source-form input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    font-size: 0.8rem;
+    outline: none;
+    transition: all 0.3s ease;
+  }
+  .add-source-form input:focus {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .btn-add-fact {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 0 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .btn-add-fact:hover {
+    box-shadow: 0 0 8px var(--accent-glow);
+    transform: translateY(-0.5px);
+  }
+  .source-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .source-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.45rem 0.65rem;
+    gap: 0.5rem;
+  }
+  .source-item:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+  .source-item-text {
+    font-size: 0.76rem;
+    color: var(--text);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .source-item-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .btn-share-fact {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    padding: 0.2rem;
+    transition: all 0.2s ease;
+  }
+  .btn-share-fact:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  /* Custom Toggle Switch CSS */
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 28px;
+    height: 16px;
+  }
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: .3s;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 10px;
+    width: 10px;
+    left: 2px;
+    bottom: 2px;
+    background-color: var(--text-muted);
+    transition: .3s;
+    border-radius: 50%;
+  }
+  input:checked + .slider {
+    background-color: rgba(0, 245, 212, 0.15);
+    border-color: var(--accent);
+  }
+  input:checked + .slider:before {
+    transform: translateX(12px);
+    background-color: var(--accent);
+  }
 </style>
 </head>
 <body>
@@ -773,6 +940,26 @@
       </select>
     </div>
   </header>
+
+  <!-- NotebookLM Source Control Center -->
+  <div class="source-panel">
+    <div class="source-header" id="sourceHeader">
+      <div class="source-title">
+        <span class="material-symbols-outlined" style="font-size: 1rem; color: var(--accent);">folder_shared</span>
+        <span>NotebookLM Reference Sources</span>
+      </div>
+      <span id="sourceToggleIcon" class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--text-muted)">expand_more</span>
+    </div>
+    <div id="sourceBody" class="source-body hidden">
+      <div class="add-source-form">
+        <input type="text" id="customFactInput" placeholder="Add custom fact... (factual only to you)" autocomplete="off">
+        <button id="btnAddFact" type="button" class="btn-add-fact">Add</button>
+      </div>
+      <div class="source-list" id="sourceList">
+        <!-- Populated dynamically via javascript -->
+      </div>
+    </div>
+  </div>
 
   <!-- Pulse timer notification bar -->
   <div id="scanningBanner" class="scanning-banner hidden">
@@ -1274,6 +1461,125 @@ themeToggle.addEventListener("click", () => {
   } else {
     icon.textContent = "dark_mode";
   }
+});
+
+// NotebookLM Source Panel State & Interactions
+const sourceHeader = document.getElementById("sourceHeader");
+const sourceBody = document.getElementById("sourceBody");
+const sourceToggleIcon = document.getElementById("sourceToggleIcon");
+const sourceList = document.getElementById("sourceList");
+const customFactInput = document.getElementById("customFactInput");
+const btnAddFact = document.getElementById("btnAddFact");
+
+// Initial mock NotebookLM reference sources
+let personalSources = [
+  { id: 1, text: "The Apollo 11 moon mission successfully landed on July 20, 1969.", active: true },
+  { id: 2, text: "VeriFact AI utilizes advanced machine learning scoring for verification.", active: true },
+  { id: 3, text: "Google Cloud Vertex AI is a fully managed agent development platform.", active: true }
+];
+
+// Toggle source panel open/closed
+sourceHeader.addEventListener("click", () => {
+  sourceBody.classList.toggle("hidden");
+  if (sourceBody.classList.contains("hidden")) {
+    sourceToggleIcon.textContent = "expand_more";
+  } else {
+    sourceToggleIcon.textContent = "expand_less";
+  }
+});
+
+// Render the source items in the panel
+function renderSources() {
+  sourceList.innerHTML = "";
+  personalSources.forEach(src => {
+    const item = el("div", "source-item");
+    
+    const textSpan = el("span", "source-item-text");
+    textSpan.textContent = src.text;
+    textSpan.title = src.text;
+    
+    const controls = el("div", "source-item-controls");
+    
+    // Share globally button
+    const btnShare = el("button", "btn-share-fact");
+    btnShare.title = "Share to global community pool";
+    btnShare.type = "button";
+    const shareIcon = el("span", "material-symbols-outlined");
+    shareIcon.textContent = "share";
+    shareIcon.style.fontSize = "0.8rem";
+    btnShare.appendChild(shareIcon);
+    
+    btnShare.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const b = bubble("user");
+      b.textContent = `[Request] Share this fact with the global community pool: "${src.text}"`;
+      await sendChatMessage(`Please share this verified reference fact to the global community pool so other users can fact-check against it: "${src.text}"`);
+    });
+    
+    // Toggle switch container
+    const label = el("label", "switch");
+    const inputCheckbox = document.createElement("input");
+    inputCheckbox.type = "checkbox";
+    inputCheckbox.checked = src.active;
+    
+    inputCheckbox.addEventListener("change", async () => {
+      src.active = inputCheckbox.checked;
+      await syncActivePremises();
+    });
+    
+    const slider = el("span", "slider");
+    label.appendChild(inputCheckbox);
+    label.appendChild(slider);
+    
+    controls.appendChild(btnShare);
+    controls.appendChild(label);
+    
+    item.appendChild(textSpan);
+    item.appendChild(controls);
+    sourceList.appendChild(item);
+  });
+}
+
+// Add a custom fact
+btnAddFact.addEventListener("click", () => {
+  addCustomFact();
+});
+customFactInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addCustomFact();
+  }
+});
+
+async function addCustomFact() {
+  const text = customFactInput.value.trim();
+  if (!text) return;
+  
+  const newId = personalSources.length ? Math.max(...personalSources.map(s => s.id)) + 1 : 1;
+  personalSources.push({ id: newId, text: text, active: true });
+  customFactInput.value = "";
+  
+  renderSources();
+  await syncActivePremises();
+}
+
+// Sync active reference sources to the backend agent session
+async function syncActivePremises() {
+  const activeTexts = personalSources.filter(s => s.active).map(s => s.text);
+  const b = bubble("user");
+  b.textContent = `[NotebookLM] Syncing ${activeTexts.length} active reference source(s)...`;
+  
+  // Submit premise update request to agent
+  await sendChatMessage(
+    `[NotebookLM Source Control Update] I have updated my reference sources in the UI. ` +
+    `Please set my active scenario premises for this session to: ${JSON.stringify(activeTexts)}. ` +
+    `Let me know that my custom references are successfully loaded for future fact-checking!`
+  );
+}
+
+// Initialize sources on load
+window.addEventListener("load", () => {
+  renderSources();
 });
 
 // Auto-grant access in Playwright / headless automation tests
