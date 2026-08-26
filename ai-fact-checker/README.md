@@ -90,6 +90,21 @@ uv run python main.py
 ```
 Open **`http://localhost:8080/`** in your browser to experience **VeriFact AI**!
 
+---
+
+## 🧩 Loading as a Real Chrome Extension (Manifest V3)
+
+You can load **VeriFact AI** directly into Google Chrome, Brave, or Microsoft Edge as an active Manifest V3 browser extension!
+
+1. Open your browser and navigate to **`chrome://extensions/`**.
+2. Enable **Developer mode** using the toggle switch in the top-right corner.
+3. Click the **"Load unpacked"** button in the top-left toolbar.
+4. Select the **`extension/`** folder located inside this repository (`ai-fact-checker/extension`).
+5. Click on the **VeriFact AI** extension icon in your Chrome toolbar to open the popup cockpit!
+6. Click **"Scan Page"** on any live webpage to extract page text and verify claims in real-time.
+
+---
+
 ### 4. Run Automated Quality Checks
 Confirm full compilation stability by running unit and integration tests:
 ```bash

@@ -1,0 +1,542 @@
+// VeriFact AI - Chrome Extension Popup Script
+
+// --- Element References ---
+const log = document.getElementById("log");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+
+const activeTabTitle = document.getElementById("activeTabTitle");
+const permissionToggle = document.getElementById("permissionToggle");
+const permissionLabel = document.getElementById("permissionLabel");
+const permissionOverlay = document.getElementById("permissionOverlay");
+const btnGrant = document.getElementById("btnGrant");
+const btnDeny = document.getElementById("btnDeny");
+
+const themeToggle = document.getElementById("themeToggle");
+const btnSettings = document.getElementById("btnSettings");
+const scanningBanner = document.getElementById("scanningBanner");
+const btnScan = document.getElementById("btnScan");
+
+// Source Control Panel
+const sourceHeader = document.getElementById("sourceHeader");
+const sourceBody = document.getElementById("sourceBody");
+const sourceToggleIcon = document.getElementById("sourceToggleIcon");
+const sourceList = document.getElementById("sourceList");
+const customFactInput = document.getElementById("customFactInput");
+const btnAddFact = document.getElementById("btnAddFact");
+const btnWorkspaceDoc = document.getElementById("btnWorkspaceDoc");
+const btnWorkspaceSheet = document.getElementById("btnWorkspaceSheet");
+
+// Catalog Manager Panel
+const catalogHeader = document.getElementById("catalogHeader");
+const catalogBody = document.getElementById("catalogBody");
+const catalogToggleIcon = document.getElementById("catalogToggleIcon");
+const catalogClaimInput = document.getElementById("catalogClaimInput");
+const catalogVerdictSelect = document.getElementById("catalogVerdictSelect");
+const catalogConfidenceInput = document.getElementById("catalogConfidenceInput");
+const btnAddCatalog = document.getElementById("btnAddCatalog");
+const btnFetchCatalog = document.getElementById("btnFetchCatalog");
+
+// Quick Pills
+const pillMars = document.getElementById("pillMars");
+const pillEarth = document.getElementById("pillEarth");
+const pillCatalog = document.getElementById("pillCatalog");
+
+// --- Extension State ---
+let backendUrl = "http://localhost:8080/chat";
+let tabPermissionGranted = false;
+let currentTabInfo = { id: null, title: "", url: "" };
+
+let personalSources = [
+  { id: 1, text: "Google Docs: Apollo_11_Grounded_Telemetry.gdoc (The Apollo 11 moon mission landed on July 20, 1969.)", active: true },
+  { id: 2, text: "Google Sheets: Fact_Checker_Algorithms_Matrix.gsheet (VeriFact AI utilizes machine learning scoring for verification.)", active: true },
+  { id: 3, text: "Google Docs: Vertex_Platform_Guide.gdoc (Google Cloud Vertex AI is a fully managed agent platform.)", active: true }
+];
+
+// Load Saved Backend URL & Permissions
+chrome.storage.local.get(["backendUrl", "tabPermissionGranted"], (res) => {
+  if (res.backendUrl) backendUrl = res.backendUrl;
+  if (res.tabPermissionGranted) {
+    tabPermissionGranted = true;
+    updatePermissionUI();
+  }
+});
+
+// Detect Active Chrome Tab
+chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  if (tabs && tabs.length > 0) {
+    const tab = tabs[0];
+    currentTabInfo = { id: tab.id, title: tab.title || "Active Page", url: tab.url || "" };
+    activeTabTitle.textContent = currentTabInfo.title;
+    scanningBanner.classList.remove("hidden");
+  } else {
+    activeTabTitle.textContent = "No active tab detected";
+  }
+});
+
+// Update Permission UI
+function updatePermissionUI() {
+  if (tabPermissionGranted) {
+    permissionToggle.classList.add("granted");
+    permissionLabel.textContent = "Access Granted";
+  } else {
+    permissionToggle.classList.remove("granted");
+    permissionLabel.textContent = "Tab Access";
+  }
+}
+
+// Permission Handlers
+permissionToggle.addEventListener("click", () => {
+  permissionOverlay.classList.remove("hidden");
+});
+btnGrant.addEventListener("click", () => {
+  tabPermissionGranted = true;
+  chrome.storage.local.set({ tabPermissionGranted: true });
+  updatePermissionUI();
+  permissionOverlay.classList.add("hidden");
+  const b = bubble("agent");
+  b.textContent = "Permission granted! VeriFact AI will now read content directly from your active browser tab when scanning.";
+});
+btnDeny.addEventListener("click", () => {
+  tabPermissionGranted = false;
+  chrome.storage.local.set({ tabPermissionGranted: false });
+  updatePermissionUI();
+  permissionOverlay.classList.add("hidden");
+});
+
+// Theme Toggle
+themeToggle.addEventListener("click", () => {
+  document.body.classList.toggle("oled-theme");
+  const icon = themeToggle.querySelector(".material-symbols-outlined");
+  icon.textContent = document.body.classList.contains("oled-theme") ? "light_mode" : "dark_mode";
+});
+
+// Settings Trigger (Prompt to update backend endpoint)
+btnSettings.addEventListener("click", () => {
+  const newUrl = prompt("Enter VeriFact AI Backend Endpoint URL:", backendUrl);
+  if (newUrl && newUrl.trim()) {
+    backendUrl = newUrl.trim();
+    chrome.storage.local.set({ backendUrl });
+    const b = bubble("agent");
+    b.textContent = `Backend endpoint updated to: ${backendUrl}`;
+  }
+});
+
+// Toggle Collapsible Source Panel
+sourceHeader.addEventListener("click", () => {
+  sourceBody.classList.toggle("hidden");
+  sourceToggleIcon.textContent = sourceBody.classList.contains("hidden") ? "expand_more" : "expand_less";
+});
+
+// Toggle Collapsible Catalog Panel
+catalogHeader.addEventListener("click", () => {
+  catalogBody.classList.toggle("hidden");
+  catalogToggleIcon.textContent = catalogBody.classList.contains("hidden") ? "expand_more" : "expand_less";
+});
+
+// Render Sources List
+function renderSources() {
+  sourceList.innerHTML = "";
+  personalSources.forEach(src => {
+    const item = document.createElement("div");
+    item.className = "source-item";
+
+    const textSpan = document.createElement("span");
+    textSpan.className = "source-item-text";
+    textSpan.textContent = src.text;
+    textSpan.title = src.text;
+
+    const controls = document.createElement("div");
+    controls.style.display = "flex";
+    controls.style.alignItems = "center";
+    controls.style.gap = "0.4rem";
+
+    const label = document.createElement("label");
+    label.className = "switch";
+    const inputCheckbox = document.createElement("input");
+    inputCheckbox.type = "checkbox";
+    inputCheckbox.checked = src.active;
+
+    inputCheckbox.addEventListener("change", async () => {
+      src.active = inputCheckbox.checked;
+      await syncActivePremises();
+    });
+
+    const slider = document.createElement("span");
+    slider.className = "slider";
+    label.appendChild(inputCheckbox);
+    label.appendChild(slider);
+
+    controls.appendChild(label);
+    item.appendChild(textSpan);
+    item.appendChild(controls);
+    sourceList.appendChild(item);
+  });
+}
+
+// Add Custom Fact
+btnAddFact.addEventListener("click", () => addCustomFact());
+customFactInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addCustomFact();
+  }
+});
+
+function addCustomFact() {
+  const text = customFactInput.value.trim();
+  if (!text) return;
+  const newId = personalSources.length ? Math.max(...personalSources.map(s => s.id)) + 1 : 1;
+  personalSources.push({ id: newId, text, active: true });
+  customFactInput.value = "";
+  renderSources();
+  syncActivePremises();
+}
+
+// Link Google Workspace Doc
+btnWorkspaceDoc.addEventListener("click", async () => {
+  const docPresets = [
+    "Google Docs: Project_Grounded_Claims_2026.gdoc (Verified telemetry data: All SpaceX Mars claims in 2024 are fully simulated.)",
+    "Google Docs: Corporate_Verified_Facts.gdoc (Official guideline: VeriFact AI runs strictly on Google Cloud platform.)",
+    "Google Docs: Science_Digest_Climate.gdoc (Scientific consensus: Earth is a perfect oblate spheroid.)"
+  ];
+  const preset = docPresets[personalSources.length % docPresets.length];
+  const newId = personalSources.length ? Math.max(...personalSources.map(s => s.id)) + 1 : 1;
+  personalSources.push({ id: newId, text: preset, active: true });
+  renderSources();
+  await syncActivePremises();
+});
+
+// Link Google Workspace Sheet
+btnWorkspaceSheet.addEventListener("click", async () => {
+  const sheetPresets = [
+    "Google Sheets: Verified_Fact_Matrix_Q4.gsheet (Contains 100 rows of official climate and astronomical reference truths.)",
+    "Google Sheets: Hallucination_Control_Database.gsheet (Contains threshold parameters for Fact-Checking score algorithms.)"
+  ];
+  const preset = sheetPresets[personalSources.length % sheetPresets.length];
+  const newId = personalSources.length ? Math.max(...personalSources.map(s => s.id)) + 1 : 1;
+  personalSources.push({ id: newId, text: preset, active: true });
+  renderSources();
+  await syncActivePremises();
+});
+
+// Sync Active Reference Sources
+async function syncActivePremises() {
+  const activeTexts = personalSources.filter(s => s.active).map(s => s.text);
+  const b = bubble("user");
+  b.textContent = `[Gemini & Workspace] Syncing ${activeTexts.length} active reference source(s)...`;
+  await sendChatMessage(
+    `[Gemini & Workspace Source Control Update] I have updated my reference sources in the UI. ` +
+    `Please set my active scenario premises for this session to: ${JSON.stringify(activeTexts)}.`
+  );
+}
+
+// Catalog Manager Buttons
+btnFetchCatalog.addEventListener("click", async () => {
+  const b = bubble("user");
+  b.textContent = "[Request] Fetching stored claim checks from my database catalog...";
+  await sendChatMessage("Show me the recent fact-checks in the catalog.");
+});
+
+btnAddCatalog.addEventListener("click", async () => {
+  const claim = catalogClaimInput.value.trim();
+  const verdict = catalogVerdictSelect.value;
+  const conf = parseInt(catalogConfidenceInput.value) || 95;
+  if (!claim) return;
+  
+  const b = bubble("user");
+  b.textContent = `[Database Save] Claim: "${claim}" | Verdict: ${verdict} | Conf: ${conf}%`;
+  catalogClaimInput.value = "";
+  
+  await sendChatMessage(
+    `Please save this verified fact-check to my catalog database:\n` +
+    `- Claim: "${claim}"\n` +
+    `- Verdict: "${verdict}"\n` +
+    `- Hallucination likelihood: ${100 - conf}\n` +
+    `- Sources: ["User Assertion"]\n\n` +
+    `Confirm that it has been saved successfully!`
+  );
+});
+
+// Quick Pills Click Handlers
+pillMars.addEventListener("click", () => {
+  input.value = "Did SpaceX land humans on Mars in 2024?";
+  form.dispatchEvent(new Event("submit"));
+});
+pillEarth.addEventListener("click", () => {
+  input.value = "Is the Earth flat?";
+  form.dispatchEvent(new Event("submit"));
+});
+pillCatalog.addEventListener("click", () => {
+  input.value = "Show recent fact-checks in the catalog.";
+  form.dispatchEvent(new Event("submit"));
+});
+
+// Scan Active Browser Page Action
+btnScan.addEventListener("click", () => {
+  if (!tabPermissionGranted) {
+    permissionOverlay.classList.remove("hidden");
+    return;
+  }
+  
+  if (!currentTabInfo.id) {
+    const b = bubble("agent");
+    b.textContent = "No active Chrome tab found to scan.";
+    return;
+  }
+
+  // Request page text from content.js
+  chrome.tabs.sendMessage(currentTabInfo.id, { action: "GET_PAGE_CONTENT" }, async (response) => {
+    if (chrome.runtime.lastError || !response || response.status !== "success") {
+      // Fallback if content script is not yet injected
+      chrome.scripting.executeScript({
+        target: { tabId: currentTabInfo.id },
+        func: () => document.body ? document.body.innerText.slice(0, 5000) : ""
+      }, async (results) => {
+        const pageText = (results && results[0] && results[0].result) ? results[0].result : "";
+        triggerPageScan(currentTabInfo.title, currentTabInfo.url, pageText);
+      });
+    } else {
+      triggerPageScan(response.title, response.url, response.text);
+    }
+  });
+});
+
+async function triggerPageScan(title, url, text) {
+  const b = bubble("user");
+  b.textContent = `[Scanning Page]: ${title}`;
+  
+  const promptMessage = 
+    `Fact-check the following content extracted from the active web page:\n` +
+    `Title: "${title}"\n` +
+    `URL: "${url}"\n` +
+    `Extracted Content:\n"${text || "(No text content found on page)"}"\n\n` +
+    `Please scan for any false claims, hallucinations, or misleading statements.`;
+    
+  await sendChatMessage(promptMessage);
+}
+
+// Markdown Parser
+function parseMarkdown(text) {
+  if (!text) return "";
+  let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  html = html.replace(/```([\s\S]*?)```/g, '<pre style="background:rgba(0,0,0,0.3); padding:0.5rem; border-radius:6px; overflow-x:auto;"><code>$1</code></pre>');
+  html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.08); padding:0.1rem 0.3rem; border-radius:4px;">$1</code>');
+  html = html.replace(/^### (.*$)/gim, '<h3 style="font-size:0.9rem; margin:0.4rem 0; color:var(--accent);">$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2 style="font-size:0.95rem; margin:0.4rem 0; color:var(--text);">$1</h2>');
+  html = html.replace(/^# (.*$)/gim, '<h1 style="font-size:1rem; margin:0.5rem 0; color:var(--text);">$1</h1>');
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  html = html.replace(/^\s*[\-\*]\s+(.*$)/gim, '<li style="margin-left:1rem; list-style-type:disc;">$1</li>');
+  html = html.replace(/\n\n/g, '<br><br>');
+  return html;
+}
+
+// Create Bubble Element
+function bubble(role) {
+  const wrap = document.createElement("div");
+  wrap.className = `msg ${role}`;
+
+  if (role === "agent") {
+    const row = document.createElement("div");
+    row.className = "agent-row";
+    
+    const avatar = document.createElement("div");
+    avatar.className = "avatar-box";
+    avatar.innerHTML = '<span class="material-symbols-outlined" style="font-size:0.8rem">security</span>';
+    
+    const contentBox = document.createElement("div");
+    contentBox.className = "agent-content";
+    
+    const label = document.createElement("div");
+    label.className = "agent-label";
+    label.textContent = "VeriFact AI";
+    
+    const b = document.createElement("div");
+    b.className = "bubble";
+    
+    contentBox.appendChild(label);
+    contentBox.appendChild(b);
+    row.appendChild(avatar);
+    row.appendChild(contentBox);
+    wrap.appendChild(row);
+    log.appendChild(wrap);
+    log.scrollTop = log.scrollHeight;
+    return b;
+  } else {
+    const b = document.createElement("div");
+    b.className = "bubble";
+    wrap.appendChild(b);
+    log.appendChild(wrap);
+    log.scrollTop = log.scrollHeight;
+    return b;
+  }
+}
+
+// Render A2UI Cards
+function renderA2UI(container, a2uiPart) {
+  const data = typeof a2uiPart === "string" ? JSON.parse(a2uiPart) : a2uiPart;
+  const card = document.createElement("div");
+  card.style.background = "rgba(255, 255, 255, 0.02)";
+  card.style.border = "1px solid var(--accent)";
+  card.style.borderRadius = "12px";
+  card.style.padding = "0.75rem";
+  card.style.marginTop = "0.5rem";
+
+  function renderNode(node) {
+    if (!node) return null;
+    if (typeof node === "string") {
+      const span = document.createElement("span");
+      span.innerHTML = parseMarkdown(node);
+      return span;
+    }
+    
+    const key = Object.keys(node)[0];
+    const val = node[key];
+    
+    if (key === "text" || key === "Text") {
+      const div = document.createElement("div");
+      div.style.fontSize = "0.8rem";
+      div.innerHTML = parseMarkdown(val.text || val);
+      return div;
+    }
+    if (key === "card" || key === "Card") {
+      const c = document.createElement("div");
+      c.style.background = "rgba(0,0,0,0.3)";
+      c.style.padding = "0.6rem";
+      c.style.borderRadius = "8px";
+      c.style.border = "1px solid var(--border)";
+      if (val.children) {
+        val.children.forEach(ch => {
+          const childNode = renderNode(ch);
+          if (childNode) c.appendChild(childNode);
+        });
+      }
+      return c;
+    }
+    if (key === "column" || key === "Column") {
+      const col = document.createElement("div");
+      col.style.display = "flex";
+      col.style.flexDirection = "column";
+      col.style.gap = "0.4rem";
+      if (val.children) {
+        val.children.forEach(ch => {
+          const childNode = renderNode(ch);
+          if (childNode) col.appendChild(childNode);
+        });
+      }
+      return col;
+    }
+    if (key === "row" || key === "Row") {
+      const row = document.createElement("div");
+      row.style.display = "flex";
+      row.style.gap = "0.5rem";
+      row.style.alignItems = "center";
+      if (val.children) {
+        val.children.forEach(ch => {
+          const childNode = renderNode(ch);
+          if (childNode) row.appendChild(childNode);
+        });
+      }
+      return row;
+    }
+    if (key === "icon" || key === "Icon") {
+      const icon = document.createElement("span");
+      icon.className = "material-symbols-outlined";
+      icon.style.color = "var(--accent)";
+      icon.textContent = val.name || val;
+      return icon;
+    }
+    return null;
+  }
+
+  const rendered = renderNode(data);
+  if (rendered) card.appendChild(rendered);
+  container.appendChild(card);
+}
+
+// Send Message to Backend API
+async function sendChatMessage(msgText) {
+  const agentBubble = bubble("agent");
+  agentBubble.innerHTML = '<span class="material-symbols-outlined" style="animation: spin 1s linear infinite;">sync</span> Contacting Reasoning Engine...';
+
+  try {
+    const res = await fetch(backendUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: msgText, user_id: "chrome-extension-user" })
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP Error ${res.status}: ${res.statusText}`);
+    }
+
+    const data = await res.json();
+    agentBubble.innerHTML = "";
+    
+    const parts = data.parts || [];
+    const texts = [];
+    const a2ui = [];
+
+    for (const p of parts) {
+      if (!p) continue;
+      let txt = p.text || "";
+      // Global tag purging
+      txt = txt.replace(/<\/?(?:a2a[-_]?datapart[-_]?json|a2ui[-_]?json|a2adatapartjson)>/gi, "").trim();
+
+      if (p.kind === "text" || (!p.kind && txt)) {
+        if (txt.includes("beginRendering") || txt.includes("surfaceUpdate") || txt.includes("dataModelUpdate")) {
+          try {
+            const firstChar = txt.match(/[\{\[]/);
+            if (firstChar) {
+              const startIdx = txt.indexOf(firstChar[0]);
+              const prose = txt.slice(0, startIdx).trim();
+              if (prose) texts.push(prose);
+
+              const jsonStr = txt.slice(startIdx);
+              const parsed = JSON.parse(jsonStr);
+              a2ui.push(parsed);
+              continue;
+            }
+          } catch (e) {
+            console.warn("A2UI parse fallback:", e);
+          }
+        }
+        if (txt) texts.push(txt);
+      } else if (p.kind === "a2ui" && p.data) {
+        a2ui.push(p.data);
+      }
+    }
+
+    if (texts.length > 0) {
+      agentBubble.innerHTML = parseMarkdown(texts.join("\n\n"));
+    }
+
+    a2ui.forEach(cardData => {
+      renderA2UI(agentBubble, cardData);
+    });
+
+  } catch (err) {
+    agentBubble.style.color = "#ff4757";
+    agentBubble.textContent = `Error reaching backend (${backendUrl}): ${err.message}. Make sure the backend server (python main.py) is running on port 8080 or check your Settings.`;
+  }
+}
+
+// Form Submit Handler
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+
+  const userBubble = bubble("user");
+  userBubble.textContent = text;
+
+  await sendChatMessage(text);
+});
+
+// Initialize Popup
+window.addEventListener("load", () => {
+  renderSources();
+  updatePermissionUI();
+});
