@@ -138,6 +138,16 @@ catalogHeader.addEventListener("click", () => {
 // Render Sources List
 function renderSources() {
   sourceList.innerHTML = "";
+  if (personalSources.length === 0) {
+    sourceList.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 1rem; color: var(--text-muted); text-align: center; gap: 0.5rem; opacity: 0.7;">
+        <span class="material-symbols-outlined" style="font-size: 2.5rem; color: var(--border-active);">folder_open</span>
+        <p style="font-size: 0.75rem; margin: 0;">No sources added yet.<br>Add custom facts or Workspace files below.</p>
+      </div>
+    `;
+    return;
+  }
+  
   personalSources.forEach(src => {
     const item = document.createElement("div");
     item.className = "source-item";
@@ -459,7 +469,22 @@ function renderA2UI(container, a2uiPart) {
 // Send Message to Backend API
 async function sendChatMessage(msgText) {
   const agentBubble = bubble("agent");
-  agentBubble.innerHTML = '<span class="material-symbols-outlined" style="animation: spin 1s linear infinite;">sync</span> Contacting Reasoning Engine...';
+  agentBubble.innerHTML = `<div class="skeleton-loader" style="display: flex; flex-direction: column; gap: 0.5rem; padding: 0.2rem 0; min-width: 200px;">
+    <div style="font-size: 0.72rem; color: var(--accent); font-weight: 600; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.3rem;" id="loadingStatusText"><span class="material-symbols-outlined" style="font-size: 0.9rem; animation: spin 1s linear infinite;">sync</span> Analyzing claim...</div>
+    <div style="height: 8px; background: linear-gradient(90deg, rgba(0, 245, 212, 0.05) 25%, rgba(131, 56, 236, 0.15) 50%, rgba(0, 245, 212, 0.05) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite linear; border-radius: 4px; width: 80%;"></div>
+    <div style="height: 8px; background: linear-gradient(90deg, rgba(0, 245, 212, 0.05) 25%, rgba(131, 56, 236, 0.15) 50%, rgba(0, 245, 212, 0.05) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite linear; border-radius: 4px; width: 95%;"></div>
+    <div style="height: 8px; background: linear-gradient(90deg, rgba(0, 245, 212, 0.05) 25%, rgba(131, 56, 236, 0.15) 50%, rgba(0, 245, 212, 0.05) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite linear; border-radius: 4px; width: 60%;"></div>
+  </div>`;
+  
+  const statusTexts = ["Analyzing claim...", "Searching sources...", "Evaluating veracity...", "Formatting results..."];
+  let statusIndex = 0;
+  const statusInterval = setInterval(() => {
+    const el = agentBubble.querySelector("#loadingStatusText");
+    if (el) {
+      statusIndex = (statusIndex + 1) % statusTexts.length;
+      el.innerHTML = `<span class="material-symbols-outlined" style="font-size: 0.9rem; animation: spin 1s linear infinite;">sync</span> ${statusTexts[statusIndex]}`;
+    }
+  }, 1200);
 
   try {
     const byomSettings = JSON.parse(localStorage.getItem("byom_settings") || "{}");
@@ -469,6 +494,7 @@ async function sendChatMessage(msgText) {
       body: JSON.stringify({ message: msgText, user_id: "chrome-extension-user", byom: byomSettings })
     });
 
+    clearInterval(statusInterval);
     if (!res.ok) {
       throw new Error(`HTTP Error ${res.status}: ${res.statusText}`);
     }

@@ -18,11 +18,16 @@
       --accent: #00f5d4;
       --accent-glow: rgba(0, 245, 212, 0.25);
       --accent-gradient: linear-gradient(135deg, #00f5d4 0%, #7b2cbf 100%);
-      --user-bg: rgba(0, 245, 212, 0.1);
       --user-border: rgba(0, 245, 212, 0.25);
       --agent-bg: rgba(255, 255, 255, 0.03);
       --agent-border: rgba(255, 255, 255, 0.08);
       --radius: 16px;
+      
+      /* Typography System */
+      --text-xs: 0.72rem;
+      --text-sm: 0.8rem;
+      --text-md: 0.9rem;
+      --text-lg: 1.05rem;
     }
 
     body.oled-theme {
@@ -106,6 +111,14 @@
     .btn-icon:hover {
       color: var(--text);
       background: var(--glass-focus);
+      transform: translateY(-1px);
+    }
+    .btn-icon:active {
+      transform: scale(0.95);
+    }
+    .btn-icon:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
     }
 
     .permission-status {
@@ -120,6 +133,14 @@
       border-radius: 20px;
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid var(--border);
+      transition: all 0.2s ease;
+    }
+    
+    .permission-status:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .permission-status:active {
+      transform: scale(0.97);
     }
 
     .status-dot {
@@ -233,6 +254,13 @@
       cursor: pointer;
       transition: all 0.2s ease;
     }
+    .btn-add-fact:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+    .btn-add-fact:active {
+      transform: scale(0.95);
+    }
 
     /* Custom Toggle Switch CSS */
     .switch {
@@ -307,7 +335,13 @@
       gap: 0.75rem;
     }
 
-    .msg { display: flex; flex-direction: column; }
+    .msg { display: flex; flex-direction: column; animation: fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+    
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(8px); filter: blur(2px); }
+      to { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+    
     .msg.user { align-items: flex-end; }
     .msg.agent { align-items: flex-start; }
 
@@ -368,8 +402,10 @@
       color: var(--text-muted);
       cursor: pointer;
       flex-shrink: 0;
+      transition: all 0.2s ease;
     }
-    .prompt-pill:hover { border-color: var(--accent); color: var(--accent); }
+    .prompt-pill:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+    .prompt-pill:active { transform: scale(0.97); }
 
     /* Input Form */
     #form {
@@ -406,7 +442,13 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      transition: all 0.2s ease;
     }
+    .btn-send:hover {
+      box-shadow: 0 0 10px var(--accent-glow);
+      transform: translateY(-1px);
+    }
+    .btn-send:active { transform: scale(0.95); }
 
     /* Permission Modal */
     .permission-overlay {
@@ -414,13 +456,18 @@
       inset: 0;
       background: rgba(0, 0, 0, 0.85);
       backdrop-filter: blur(8px);
-      z-index: 100;
+      z-index: 1000;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 1rem;
+      transition: opacity 0.3s ease;
     }
-    .permission-overlay.hidden { display: none; }
+    .permission-overlay.hidden { 
+      opacity: 0;
+      pointer-events: none;
+      backdrop-filter: blur(0px);
+    }
     .permission-modal {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -430,6 +477,11 @@
       flex-direction: column;
       gap: 0.8rem;
       width: 100%;
+      transform: translateY(0);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .permission-overlay.hidden .permission-modal {
+      transform: translateY(20px);
     }
     .modal-actions { display: flex; gap: 0.5rem; }
     .modal-actions button {
@@ -440,9 +492,14 @@
       font-size: 0.8rem;
       font-weight: 600;
       cursor: pointer;
+      transition: all 0.2s ease;
     }
+    .modal-actions button:hover { transform: translateY(-1px); }
+    .modal-actions button:active { transform: scale(0.97); }
+    
     .btn-grant { background: var(--accent-gradient); color: #000; }
     .btn-deny { background: rgba(255, 255, 255, 0.05); color: var(--text); border: 1px solid var(--border); }
+    .btn-grant:hover { box-shadow: 0 0 12px var(--accent-glow); }
 
     .material-symbols-outlined {
       font-family: 'Material Symbols Outlined';
@@ -485,10 +542,10 @@
     <div class="permission-modal" style="padding: 0.85rem; text-align: left; max-width: 330px;">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem;">
         <div style="display: flex; align-items: center; gap: 0.4rem;">
-          <span class="material-symbols-outlined" style="color: #a855f7; font-size: 1.1rem;">key</span>
+          <span class="material-symbols-outlined" style="color: #a855f7; font-size: 1.1rem;" aria-hidden="true">key</span>
           <h3 style="font-size: 0.85rem; color: var(--text); margin: 0;">Bring Your Own AI Model (BYOM)</h3>
         </div>
-        <button id="btnCloseBYOM" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><span class="material-symbols-outlined" style="font-size: 1rem;">close</span></button>
+        <button id="btnCloseBYOM" aria-label="Close settings" style="background: none; border: none; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease;"><span class="material-symbols-outlined" style="font-size: 1rem;" aria-hidden="true">close</span></button>
       </div>
 
       <!-- 1-Click Zero Friction Remote Auth Banner -->
@@ -528,7 +585,7 @@
         <label style="font-size: 0.68rem; font-weight: 600; color: var(--text);">Model Name (Optional)</label>
         <input type="text" id="byomModelInput" placeholder="e.g. gpt-4o-mini, claude-3-5-sonnet-20241022" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 0.35rem; color: var(--text); font-size: 0.72rem; outline: none;">
 
-        <div style="display: flex; gap: 0.4rem; margin-top: 0.3rem;">
+        <div style="display: flex; gap: 0.4rem; margin-top: 0.3rem;" class="modal-actions">
           <button id="btnSaveBYOM" class="btn-grant" style="flex: 1; background: linear-gradient(135deg, #8338ec, #3a86c8); border: none; padding: 0.35rem; font-size: 0.72rem; cursor: pointer;">Save Key</button>
           <button id="btnClearBYOM" class="btn-deny" style="flex: 0.7; padding: 0.35rem; font-size: 0.72rem; cursor: pointer;">Clear</button>
         </div>
@@ -539,7 +596,7 @@
   <header>
     <div class="header-main">
       <div class="brand">
-        <span class="material-symbols-outlined brand-icon">security</span>
+        <span class="material-symbols-outlined brand-icon" aria-hidden="true">security</span>
         <h1>VeriFact AI</h1>
         <button id="themeToggle" class="btn-icon" title="Toggle OLED theme">
           <span class="material-symbols-outlined">dark_mode</span>
@@ -673,8 +730,8 @@
   <form id="form">
     <div class="input-wrapper">
       <input id="input" placeholder="Ask fact-checker or click 'Scan Page'…" autocomplete="off" autofocus>
-      <button type="submit" class="btn-send">
-        <span class="material-symbols-outlined" style="font-size: 1rem;">send</span>
+      <button type="submit" class="btn-send" aria-label="Send query">
+        <span class="material-symbols-outlined" style="font-size: 1rem;" aria-hidden="true">send</span>
       </button>
     </div>
   </form>
