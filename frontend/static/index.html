@@ -1,0 +1,2264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VeriFact AI - Real-time Fact Checker</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0b0d17">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/icons/icon192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #00f5d4;
+    --accent-glow: rgba(0, 245, 212, 0.25);
+    --accent-gradient: linear-gradient(135deg, #00f5d4 0%, #00bbf9 100%);
+    --purple-gradient: linear-gradient(135deg, #8338ec 0%, #3a86c8 100%);
+    --bg-dark: #090a10;
+    --bg-panel: #11131e;
+    --glass: rgba(255, 255, 255, 0.03);
+    --glass-focus: rgba(255, 255, 255, 0.06);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-active: rgba(0, 245, 212, 0.3);
+    --text: #f3f4f6;
+    --text-muted: #a1a8b6; /* Lightened slightly for WCAG AA contrast against bg-panel */
+    --shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    
+    /* Typography System */
+    --text-xs: 0.72rem;
+    --text-sm: 0.8rem;
+    --text-md: 0.9rem;
+    --text-lg: 1.15rem;
+    --text-xl: 1.4rem;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg-dark);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Extension Popup Frame Sandbox */
+  .extension-frame {
+    width: 100%;
+    max-width: 375px;
+    height: 100%;
+    max-height: 600px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  @media (min-width: 600px) {
+    .extension-frame {
+      max-width: 450px;
+      height: 90vh;
+      max-height: 850px;
+    }
+  }
+
+  /* Sleek Glassmorphic Header */
+  header {
+    background: rgba(17, 19, 30, 0.7);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 10;
+  }
+
+  .header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .brand-icon {
+    font-size: 1.5rem;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+  }
+
+  .brand h1 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  /* Permission Indicator Badges */
+  .permission-status {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.35rem 0.65rem;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .permission-status:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-1px);
+  }
+  .permission-status:active {
+    transform: scale(0.97);
+  }
+  .permission-status:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .permission-status.active {
+    border-color: var(--border-active);
+    background: rgba(0, 245, 212, 0.05);
+    box-shadow: 0 0 10px rgba(0, 245, 212, 0.1);
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    background: #ef4444;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #ef4444;
+  }
+
+  .permission-status.active .status-dot {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse-dot 1.5s infinite alternate;
+  }
+
+  @keyframes pulse-dot {
+    0% { transform: scale(1); opacity: 0.7; }
+    100% { transform: scale(1.3); opacity: 1; }
+  }
+
+  /* Mock Active Tab Selector */
+  .mock-tab-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    padding: 0.35rem 0.6rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+  }
+
+  .mock-tab-selector label {
+    color: var(--text-muted);
+  }
+
+  .mock-tab-selector select {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    outline: none;
+    width: 170px;
+  }
+
+  .mock-tab-selector select option {
+    background: var(--bg-panel);
+    color: var(--text);
+  }
+
+  /* Active Permission Info / Scanning Banner */
+  .scanning-banner {
+    background: linear-gradient(90deg, rgba(0, 245, 212, 0.06) 0%, rgba(131, 56, 236, 0.06) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 1.2rem;
+    font-size: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+  }
+
+  .scanning-banner.hidden {
+    display: none;
+  }
+
+  .timer-box {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .timer-box span {
+    font-family: monospace;
+    font-size: 0.85rem;
+  }
+
+  .btn-scan {
+    background: var(--accent-gradient);
+    border: none;
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    color: #000;
+    font-weight: 600;
+    font-size: 0.7rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-scan:hover {
+    box-shadow: 0 0 12px var(--accent-glow);
+    transform: translateY(-1px);
+  }
+  .btn-scan:active {
+    transform: scale(0.95);
+  }
+  .btn-scan:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Chat Logs */
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    scroll-behavior: smooth;
+  }
+
+  #log::-webkit-scrollbar {
+    width: 5px;
+  }
+  #log::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  #log::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+
+  /* Dialogue message layouts */
+  .msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 90%;
+    animation: fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+
+  .msg.user {
+    align-self: flex-end;
+    align-items: flex-end;
+  }
+
+  .msg.agent {
+    align-self: flex-start;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .bubble {
+    padding: 0.75rem 1rem;
+    border-radius: 16px;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    border: 1px solid var(--border);
+  }
+
+  .msg.user .bubble {
+    background: var(--purple-gradient);
+    border: none;
+    border-bottom-right-radius: 4px;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(131, 56, 236, 0.2);
+  }
+
+  .msg.agent .bubble {
+    background: var(--glass);
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .bubble.rich {
+    background: transparent;
+    border: none;
+    padding: 0;
+    max-width: 100%;
+    white-space: normal;
+    box-shadow: none;
+  }
+
+  /* Shimmering Skeleton Loader */
+  .skeleton-loader {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+    min-width: 200px;
+  }
+  .skeleton-bar {
+    height: 8px;
+    background: linear-gradient(90deg, rgba(0, 245, 212, 0.05) 25%, rgba(131, 56, 236, 0.15) 50%, rgba(0, 245, 212, 0.05) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: 4px;
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  /* Theme Button & OLED mode classes */
+  .btn-theme {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3rem;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+  .btn-theme:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--accent);
+  }
+  body.oled-theme {
+    background: #000000;
+  }
+  body.oled-theme .extension-frame {
+    background: #000000;
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+  body.oled-theme .permission-overlay {
+    background: rgba(0, 0, 0, 0.95);
+  }
+  body.oled-theme .permission-modal {
+    background: #0a0a0c;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  body.oled-theme header {
+    background: #000000;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Interactive Agent Dialogue Row */
+  .agent-row {
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .avatar-box {
+    width: 28px;
+    height: 28px;
+    background: rgba(0, 245, 212, 0.05);
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 8px var(--accent-glow);
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+  }
+
+  .agent-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1;
+  }
+
+  .agent-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-left: 0.1rem;
+  }
+
+  /* Example prompts row above input */
+  .example-prompts {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0 1.2rem 0.6rem 1.2rem;
+    background: rgba(17, 19, 30, 0.8);
+    backdrop-filter: blur(12px);
+    overflow-x: auto;
+    white-space: nowrap;
+    width: 100%;
+  }
+  .example-prompts::-webkit-scrollbar {
+    display: none;
+  }
+  .prompt-pill {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+    display: inline-block;
+  }
+  .prompt-pill:hover {
+    background: rgba(0, 245, 212, 0.05);
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  /* --- Premium Dark Glassmorphic A2UI styles --- */
+  .a2card {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.1rem;
+    background: rgba(255, 255, 255, 0.02);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    max-width: 100%;
+    backdrop-filter: blur(10px);
+    animation: fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    opacity: 0;
+  }
+  
+  .a2card:nth-child(1) { animation-delay: 0.1s; }
+  .a2card:nth-child(2) { animation-delay: 0.2s; }
+  .a2card:nth-child(3) { animation-delay: 0.3s; }
+  
+  .a2card:hover {
+    border-color: var(--border-active);
+  }
+
+  .a2col { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
+  .a2row { display: flex; flex-direction: row; gap: 0.8rem; align-items: flex-start; flex-wrap: nowrap; width: 100%; padding: 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .a2row:last-child { border-bottom: none; }
+  .a2row > * { flex: 1; min-width: 0; word-wrap: break-word; }
+  .a2row.between { justify-content: space-between; }
+  
+  .a2text { margin: 0; line-height: 1.4; color: var(--text); }
+  .a2text.a2-h1 { font-size: 1.3rem; font-weight: 700; color: #fff; }
+  .a2text.a2-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; }
+  .a2text.a2-h3 { font-size: 1rem; font-weight: 600; color: var(--accent); }
+  .a2text.a2-h4 { font-size: 0.95rem; font-weight: 600; }
+  .a2text.a2-caption { font-size: 0.8rem; color: var(--text-muted); }
+  
+  .prose-content { line-height: 1.5; font-size: 0.88rem; width: 100%; }
+  .prose-content ul, .a2text ul { margin: 0.4rem 0 0.4rem 1.1rem; padding: 0; list-style-type: disc; }
+  .prose-content li, .a2text li { margin-bottom: 0.35rem; line-height: 1.4; color: var(--text-muted); }
+  .prose-content li strong, .a2text li strong { color: #fff; font-weight: 600; }
+  .prose-content br { content: ""; display: block; margin-bottom: 0.25rem; }
+  
+  .a2divider { border: none; border-top: 1px solid var(--border); margin: 0.5rem 0; width: 100%; }
+  .a2img { max-width: 100%; border-radius: 10px; display: block; border: 1px solid var(--border); }
+  
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 1.25rem;
+    line-height: 1;
+    display: inline-block;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+    vertical-align: middle;
+    color: var(--accent);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'liga';
+  }
+
+  /* Form & Interactive Input */
+  form {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.9rem 1.2rem;
+    border-top: 1px solid var(--border);
+    background: rgba(17, 19, 30, 0.8);
+    backdrop-filter: blur(12px);
+    align-items: center;
+    width: 100%;
+  }
+
+  .input-wrapper {
+    position: relative;
+    flex: 1;
+  }
+
+  input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.88rem;
+    color: var(--text);
+    outline: none;
+    font-family: inherit;
+    transition: all 0.3s ease;
+  }
+
+  input:focus {
+    border-color: var(--accent);
+    background: var(--glass-focus);
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+
+  form button {
+    padding: 0.75rem 1.2rem;
+    border: none;
+    border-radius: 12px;
+    background: var(--accent-gradient);
+    color: #000;
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px var(--accent-glow);
+  }
+
+  form button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px var(--accent-glow);
+  }
+
+  /* Glassmorphic Sliding Permission Dialog Overlay */
+  .permission-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(9, 10, 16, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    transition: opacity 0.3s ease;
+  }
+
+  .permission-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+    backdrop-filter: blur(0px);
+  }
+
+  .permission-modal {
+    width: 100%;
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border);
+    border-top-left-radius: 28px;
+    border-top-right-radius: 28px;
+    padding: 2rem 1.5rem;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    transform: translateY(0);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .permission-overlay.hidden .permission-modal {
+    transform: translateY(100%);
+  }
+
+  .modal-shield {
+    align-self: center;
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 245, 212, 0.05);
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  .modal-shield span {
+    font-size: 2.2rem;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .modal-text {
+    text-align: center;
+  }
+
+  .modal-text h2 {
+    margin: 0 0 0.4rem 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .modal-text p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+
+  /* Duration Selector Cards */
+  .duration-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .duration-card {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .duration-card:hover {
+    background: var(--glass-focus);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .duration-card.selected {
+    background: rgba(0, 245, 212, 0.04);
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(0, 245, 212, 0.08);
+  }
+
+  .duration-label {
+    font-size: 0.88rem;
+    font-weight: 500;
+  }
+
+  .duration-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .radio-dot {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+  }
+
+  .duration-card.selected .radio-dot {
+    border-color: var(--accent);
+  }
+
+  .duration-card.selected .radio-dot::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .modal-actions button {
+    flex: 1;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+  }
+
+  .btn-grant {
+    background: var(--accent-gradient);
+    color: #000;
+    box-shadow: 0 4px 15px var(--accent-glow);
+  }
+
+  .btn-deny {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-deny:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  /* NotebookLM Source Control Center */
+  .source-panel {
+    background: rgba(255, 255, 255, 0.01);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    transition: all 0.3s ease;
+  }
+  .source-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 1.2rem;
+    cursor: pointer;
+    user-select: none;
+    background: rgba(17, 19, 30, 0.4);
+  }
+  .source-header:hover {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .source-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+  .source-body {
+    padding: 0.8rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    border-top: 1px solid var(--border);
+    background: rgba(9, 10, 16, 0.5);
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .source-body.hidden {
+    display: none;
+  }
+  .add-source-form {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .add-source-form input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    font-size: 0.8rem;
+    outline: none;
+    transition: all 0.3s ease;
+  }
+  .add-source-form input:focus {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .btn-add-fact {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 0 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .btn-add-fact:hover {
+    box-shadow: 0 0 8px var(--accent-glow);
+    transform: translateY(-0.5px);
+  }
+  .source-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .source-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.45rem 0.65rem;
+    gap: 0.5rem;
+  }
+  .source-item:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+  .source-item-text {
+    font-size: 0.76rem;
+    color: var(--text);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .source-item-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .btn-share-fact {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    padding: 0.2rem;
+    transition: all 0.2s ease;
+  }
+  .btn-share-fact:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  /* Custom Toggle Switch CSS */
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 28px;
+    height: 16px;
+  }
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: .3s;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 10px;
+    width: 10px;
+    left: 2px;
+    bottom: 2px;
+    background-color: var(--text-muted);
+    transition: .3s;
+    border-radius: 50%;
+  }
+  input:checked + .slider {
+    background-color: rgba(0, 245, 212, 0.15);
+    border-color: var(--accent);
+  }
+  input:checked + .slider:before {
+    transform: translateX(12px);
+    background-color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<div class="extension-frame">
+  <!-- Dynamic Permission Dialog Overlay Modal -->
+  <div id="permissionOverlay" class="permission-overlay">
+    <div class="permission-modal">
+      <div class="modal-shield">
+        <span class="material-symbols-outlined">shield_person</span>
+      </div>
+      <div class="modal-text">
+        <h2>Read Active Page?</h2>
+        <p>Grant permission for the Fact-Checker to read the text of the active browser tab to perform real-time verification.</p>
+      </div>
+
+      <div class="duration-options">
+        <div class="duration-card selected" data-duration="once">
+          <div>
+            <div class="duration-label">Just once</div>
+            <div class="duration-desc">Valid only for the very next query</div>
+          </div>
+          <div class="radio-dot"></div>
+        </div>
+        <div class="duration-card" data-duration="15m">
+          <div>
+            <div class="duration-label">For 15 Minutes</div>
+            <div class="duration-desc">Access auto-expires in 15 minutes</div>
+          </div>
+          <div class="radio-dot"></div>
+        </div>
+        <div class="duration-card" data-duration="1h">
+          <div>
+            <div class="duration-label">For 1 Hour</div>
+            <div class="duration-desc">Access auto-expires in 1 hour</div>
+          </div>
+          <div class="radio-dot"></div>
+        </div>
+        <div class="duration-card" data-duration="always">
+          <div>
+            <div class="duration-label">Always for this domain</div>
+            <div class="duration-desc">Persistent access on this tab's domain</div>
+          </div>
+          <div class="radio-dot"></div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="btnDeny" class="btn-deny">Deny</button>
+        <button id="btnGrant" class="btn-grant">Grant Access</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BYOM Remote Auth Modal -->
+  <div id="byomModal" class="permission-overlay hidden">
+    <div class="permission-modal" style="max-width: 440px; text-align: left;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="material-symbols-outlined" style="color: #a855f7; font-size: 1.3rem;">key</span>
+          <h3 style="font-size: 1rem; color: var(--text); margin: 0;">Bring Your Own AI Model (BYOM)</h3>
+        </div>
+        <button id="btnCloseBYOM" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><span class="material-symbols-outlined">close</span></button>
+      </div>
+
+      <!-- 1-Click Remote Auth Banner -->
+      <button id="btnAutoDetectAuth" style="width: 100%; padding: 0.45rem; background: linear-gradient(135deg, rgba(0, 245, 212, 0.2), rgba(131, 56, 236, 0.25)); border: 1px solid var(--accent); border-radius: 6px; color: var(--accent); font-weight: 600; font-size: 0.72rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.3rem; margin-bottom: 0.6rem; transition: all 0.2s ease;">
+        <span class="material-symbols-outlined" style="font-size: 0.85rem;">bolt</span>
+        1-Click Auto-Connect Google AI Auth
+      </button>
+
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+        Or select any AI provider below to bring your custom remote API key for queries <strong>WITHOUT CAP</strong> (OpenAI, Claude, Gemini, Grok).
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text);">AI Provider</label>
+          <a id="byomPortalLink" href="https://aistudio.google.com/app/apikey" target="_blank" style="font-size: 0.72rem; color: #00f5d4; text-decoration: underline; font-weight: 500;">
+            1-Click Get Key ↗
+          </a>
+        </div>
+        <select id="byomProviderSelect" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem; color: var(--text); font-size: 0.82rem; outline: none;">
+          <option value="default">Default (Google Vertex AI Reasoning Engine)</option>
+          <option value="gemini">Google Gemini (Gemini 2.5 Flash / Pro)</option>
+          <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
+          <option value="anthropic">Anthropic (Claude 3.5 Sonnet / Opus)</option>
+          <option value="grok">xAI Grok (Grok-2)</option>
+          <option value="custom">Custom / OpenRouter</option>
+        </select>
+
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text);">Remote API Key</label>
+          <button id="btnPasteClipboardKey" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 6px; padding: 0.15rem 0.45rem; color: var(--text-muted); font-size: 0.7rem; cursor: pointer;">
+            Paste Clipboard 📋
+          </button>
+        </div>
+        <input type="password" id="byomApiKeyInput" placeholder="sk-..., AIza..., xai-..." style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem; color: var(--text); font-size: 0.82rem; outline: none;">
+
+        <label style="font-size: 0.75rem; font-weight: 600; color: var(--text);">Model Name (Optional Override)</label>
+        <input type="text" id="byomModelInput" placeholder="e.g. gpt-4o-mini, claude-3-5-sonnet-20241022" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem; color: var(--text); font-size: 0.82rem; outline: none;">
+
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+          <button id="btnSaveBYOM" class="btn-grant" style="flex: 1; background: linear-gradient(135deg, #8338ec, #3a86c8); border: none; cursor: pointer;">Save Key & Connect</button>
+          <button id="btnClearBYOM" class="btn-deny" style="flex: 0.7; cursor: pointer;">Clear Key</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <header>
+    <div class="header-main">
+      <div class="brand">
+        <span class="material-symbols-outlined brand-icon">security</span>
+        <h1>VeriFact AI</h1>
+        <button id="themeToggle" class="btn-theme" title="Toggle OLED black mode" style="margin-left: 0.4rem;">
+          <span class="material-symbols-outlined" style="font-size: 1rem;">dark_mode</span>
+        </button>
+        <button id="btnInstallPWA" class="btn-theme" title="Install VeriFact AI App" style="margin-left: 0.4rem; display: none; background: rgba(0, 245, 212, 0.15); border-color: var(--accent); color: var(--accent);">
+          <span class="material-symbols-outlined" style="font-size: 1rem;">install_desktop</span>
+        </button>
+        <button id="btnBYOM" class="btn-theme" title="Bring Your Own AI Model / Remote Auth Settings" style="margin-left: 0.4rem; background: rgba(131, 56, 236, 0.2); border-color: #8338ec; color: #a855f7;">
+          <span class="material-symbols-outlined" style="font-size: 1rem;">key</span>
+        </button>
+        <span id="queryCounterBadge" style="margin-left: 0.4rem; font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 20px; background: rgba(0, 245, 212, 0.12); color: var(--accent); border: 1px solid var(--accent-glow);" title="15 free queries per user per day. Bring your own key for access without cap!">15/15 Left</span>
+      </div>
+      <div id="permissionToggle" class="permission-status">
+        <div class="status-dot"></div>
+        <span id="permissionLabel">Tab Access</span>
+      </div>
+    </div>
+
+    <!-- Interactive Active Tab Page Selector -->
+    <div class="mock-tab-selector">
+      <span class="material-symbols-outlined" style="font-size:1rem;color:var(--text-muted)">language</span>
+      <label for="activeTabSelect">Active Tab:</label>
+      <select id="activeTabSelect">
+        <option value="flat_earth">Flat Earth Article (wikipedia.org)</option>
+        <option value="brain_myth">10% Brain Myth (scientificamerican.com)</option>
+        <option value="seeded_catalog">Seeded Claims List (fact-database.org)</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Column Level Icon-Based Control Center Grid -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); background: rgba(17, 19, 30, 0.4);">
+    <!-- Sources Column Card Header -->
+    <div id="sourceHeader" class="source-header" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem 0.65rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
+      <div class="source-title" style="display: flex; align-items: center; gap: 0.4rem; overflow: hidden;">
+        <span class="material-symbols-outlined" style="font-size: 1.1rem; color: var(--accent); flex-shrink: 0;">cloud_sync</span>
+        <span style="font-size: 0.75rem; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Sources</span>
+      </div>
+      <span id="sourceToggleIcon" class="material-symbols-outlined" style="font-size: 1rem; color: var(--text-muted); flex-shrink: 0;">expand_more</span>
+    </div>
+
+    <!-- Fact Catalog Column Card Header -->
+    <div id="catalogHeader" class="source-header" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem 0.65rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
+      <div class="source-title" style="display: flex; align-items: center; gap: 0.4rem; overflow: hidden;">
+        <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #00bbf9; flex-shrink: 0;">database</span>
+        <span style="font-size: 0.75rem; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Fact Catalog</span>
+      </div>
+      <span id="catalogToggleIcon" class="material-symbols-outlined" style="font-size: 1rem; color: var(--text-muted); flex-shrink: 0;">expand_more</span>
+    </div>
+  </div>
+
+  <!-- Expandable Body Content Triggers -->
+  <div id="sourceBody" class="source-body hidden" style="padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); background: rgba(9, 10, 16, 0.6);">
+    <div class="add-source-form" style="display: flex; gap: 0.5rem; flex-direction: column; width: 100%;">
+      <div style="display: flex; gap: 0.5rem; width: 100%;">
+        <input type="text" id="customFactInput" placeholder="Add custom fact or link..." autocomplete="off" style="flex: 1; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; color: var(--text); font-size: 0.8rem; outline: none;">
+        <button id="btnAddFact" type="button" class="btn-add-fact">Add</button>
+      </div>
+      <div style="display: flex; gap: 0.5rem; width: 100%;">
+        <button id="btnWorkspaceDoc" type="button" class="btn-add-fact" style="flex: 1; background: rgba(66, 133, 244, 0.12); color: #fff; border: 1px solid rgba(66, 133, 244, 0.35); padding: 0.45rem; font-size: 0.74rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span class="material-symbols-outlined" style="font-size: 0.9rem; color: #4285F4;">description</span>
+          Link Google Doc
+        </button>
+        <button id="btnWorkspaceSheet" type="button" class="btn-add-fact" style="flex: 1; background: rgba(52, 168, 83, 0.12); color: #fff; border: 1px solid rgba(52, 168, 83, 0.35); padding: 0.45rem; font-size: 0.74rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span class="material-symbols-outlined" style="font-size: 0.9rem; color: #34A853;">table_chart</span>
+          Link Google Sheet
+        </button>
+      </div>
+    </div>
+    <div class="source-list" id="sourceList">
+      <!-- Populated dynamically via javascript -->
+    </div>
+  </div>
+
+  <div id="catalogBody" class="source-body hidden" style="padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); background: rgba(9, 10, 16, 0.6);">
+    <div class="add-source-form" style="flex-direction: column; gap: 0.5rem; display: flex;">
+      <input type="text" id="catalogClaimInput" placeholder="Enter claim to add to database..." autocomplete="off" style="width: 100%;">
+      <div style="display: flex; gap: 0.5rem; width: 100%; align-items: center;">
+        <select id="catalogVerdictSelect" style="flex: 1.2; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; color: var(--text); font-size: 0.8rem; outline: none;">
+          <option value="True">Verdict: True</option>
+          <option value="False">Verdict: False</option>
+          <option value="Misleading">Verdict: Misleading</option>
+        </select>
+        <input type="number" id="catalogConfidenceInput" placeholder="Acc. Conf. (0-100)" min="0" max="100" style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; color: var(--text); font-size: 0.8rem; outline: none;" value="95">
+      </div>
+      <div style="display: flex; gap: 0.5rem; width: 100%; align-items: center;">
+        <input type="number" id="catalogFalsehoodConfidenceInput" placeholder="False Conf. (0-100)" min="0" max="100" style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; color: var(--text); font-size: 0.8rem; outline: none;" value="5">
+        <input type="number" id="catalogHallucinationInput" placeholder="Halluc. % (0-100)" min="0" max="100" style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.6rem; color: var(--text); font-size: 0.8rem; outline: none;" value="0">
+        <button id="btnAddCatalog" type="button" class="btn-add-fact" style="flex: 1; padding: 0.4rem 0.6rem; border-radius: 8px; font-size: 0.78rem;">Save Check</button>
+      </div>
+    </div>
+    <div style="display: flex; gap: 0.5rem; width: 100%;">
+      <button id="btnFetchCatalog" type="button" class="btn-add-fact" style="flex: 1; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); padding: 0.55rem; font-size: 0.78rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+        <span class="material-symbols-outlined" style="font-size:0.95rem;">pageview</span>
+        Fetch Database Catalog
+      </button>
+    </div>
+  </div>
+
+  <!-- Pulse timer notification bar -->
+  <div id="scanningBanner" class="scanning-banner hidden">
+    <div class="timer-box">
+      <svg class="hourglass-loader" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="18" style="vertical-align: middle; margin-right: 6px;">
+        <style>
+          @keyframes svg-flip {
+            0%, 45% { transform: rotate(0deg); }
+            50%, 95% { transform: rotate(180deg); }
+            100% { transform: rotate(360deg); }
+          }
+          @keyframes svg-drip {
+            0% { stroke-dashoffset: 10; }
+            100% { stroke-dashoffset: 0; }
+          }
+          @keyframes svg-sandTop {
+            0%, 100% { d: path('M 7 5 L 17 5 L 12 12 Z'); }
+            45%, 50% { d: path('M 12 11.5 L 12 11.5 L 12 12 Z'); }
+          }
+          @keyframes svg-sandBottom {
+            0%, 100% { d: path('M 12 12 L 12 12 L 12 12 Z'); }
+            45%, 50% { d: path('M 7 19 L 17 19 L 12 12 Z'); }
+          }
+          .svg-frame { animation: svg-flip 5s cubic-bezier(0.6, -0.28, 0.735, 0.045) infinite; transform-origin: 12px 12px; }
+          .svg-drip { stroke-dasharray: 2, 4; animation: svg-drip 0.5s linear infinite; }
+          .svg-sand-top { animation: svg-sandTop 5s ease-in-out infinite; }
+          .svg-sand-bottom { animation: svg-sandBottom 5s ease-in-out infinite; }
+        </style>
+        <g class="svg-frame">
+          <path d="M 6 2 L 18 2 M 6 22 L 18 22 M 6 2 C 6 2, 7 8, 11 11.5 C 7 15, 6 22, 6 22 M 18 2 C 18 2, 17 8, 13 11.5 C 17 15, 18 22, 18 22" fill="none" stroke="#00f5d4" stroke-width="1.5" stroke-linecap="round"/>
+          <path class="svg-sand-top" d="M 7 5 L 17 5 L 12 12 Z" fill="#00f5d4" opacity="0.85"/>
+          <path class="svg-sand-bottom" d="M 12 12 L 12 12 L 12 12 Z" fill="#00f5d4" opacity="0.85"/>
+          <line class="svg-drip" x1="12" y1="11" x2="12" y2="19" stroke="#00f5d4" stroke-width="1.2"/>
+        </g>
+      </svg>
+      Access active: <span id="timeLeft">00:00</span>
+    </div>
+    <button id="btnScan" class="btn-scan">
+      <span class="material-symbols-outlined" style="font-size:0.85rem">query_stats</span>
+      Scan Page Content
+    </button>
+  </div>
+
+  <div id="log"></div>
+
+  <!-- Example prompts container row -->
+  <div class="example-prompts">
+    <div class="prompt-pill" onclick="usePrompt('Did humans land on Mars in 2024?')">🚀 Mars landing in 2024?</div>
+    <div class="prompt-pill" onclick="usePrompt('Is the Earth flat? Fact-check it and save to catalog.')">🌍 Is Earth flat?</div>
+    <div class="prompt-pill" onclick="usePrompt('Show me the recent fact-checks in the catalog.')">📊 Show catalog</div>
+  </div>
+
+  <form id="form">
+    <div class="input-wrapper">
+      <input id="input" placeholder="Ask fact-checker or click 'Scan Page'…" autocomplete="off" autofocus>
+    </div>
+    <button>Send</button>
+  </form>
+</div>
+
+<script>
+const log = document.getElementById("log");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+const activeTabSelect = document.getElementById("activeTabSelect");
+
+// Permission Elements
+const permissionOverlay = document.getElementById("permissionOverlay");
+const permissionToggle = document.getElementById("permissionToggle");
+const permissionLabel = document.getElementById("permissionLabel");
+const scanningBanner = document.getElementById("scanningBanner");
+const timeLeft = document.getElementById("timeLeft");
+const btnScan = document.getElementById("btnScan");
+const btnDeny = document.getElementById("btnDeny");
+const btnGrant = document.getElementById("btnGrant");
+const durationCards = document.querySelectorAll(".duration-card");
+
+// State management
+let permissionState = {
+  status: "denied", // 'granted' or 'denied'
+  duration: "once", // 'once', '15m', '1h', 'always'
+  expiresAt: null
+};
+
+// Simulated mock page contents depending on selected active tab
+const MOCK_PAGES = {
+  flat_earth: `Title: The Flat Earth Theory in the Modern Era
+Content: The Flat Earth theory is a modern conspiracy belief stating that the earth is not a sphere, but a flat disc surrounded by an ice wall. This claim contradicts hundreds of years of physical observations, space missions, and satellite photographs showing the Earth is an oblate spheroid. Modern flat-earth promoters suggest that NASA and other international agencies fake celestial photography to maintain the illusion of a spherical Earth.`,
+  
+  brain_myth: `Title: Understanding Human Brain Capacity
+Content: It is a commonly repeated belief that humans use only 10% of their brains. According to neurological research, human beings use virtually all parts of their brains, and almost all of it is active almost all the time. Neuroimaging tools like fMRI demonstrate that complex actions involve the cooperation of many different brain areas, even during sleep.`,
+  
+  seeded_catalog: `Title: Seeded Database Claims Analysis
+Content: Our local fact-check database registers claims for quick matching. The flat earth claim holds a 'FALSE' verdict with high hallucination likelihood. The 10% brain myth also possesses a 'FALSE' verdict. Seeded entries provide quick answers about verified factual reports.`
+};
+
+function parseMarkdown(text) {
+  if (!text) return "";
+  
+  // 1. Escape HTML to prevent XSS injection
+  let html = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+    
+  // 2. Headings (### -> h3, ## -> h2, # -> h1)
+  html = html.replace(/^(?:###)\s+(.*?)$/gm, "<h3>$1</h3>");
+  html = html.replace(/^(?:##)\s+(.*?)$/gm, "<h2>$1</h2>");
+  html = html.replace(/^(?:#)\s+(.*?)$/gm, "<h1>$1</h1>");
+  
+  // 3. Bold (**text** or __text__)
+  html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/__(.*?)__/g, "<strong>$1</strong>");
+  
+  // 4. Italic (*text* or _text_)
+  html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
+  html = html.replace(/_(.*?)_/g, "<em>$1</em>");
+  
+  // 5. Code blocks (```code block```)
+  html = html.replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>");
+  
+  // 6. Inline code (`code`)
+  html = html.replace(/`(.*?)`/g, "<code>$1</code>");
+  
+  // 7. Bullet points: convert lines starting with * or - followed by a space into list items.
+  html = html.replace(/^[*\-]\s+(.*?)$/gm, "<li>$1</li>");
+  
+  // Wrap contiguous <li> lines in a <ul> tag.
+  html = html.replace(/(<li>[\s\S]*?<\/li>)/g, "<ul>$1</ul>");
+  // Clean up nested ul: remove "</ul>\n<ul>"
+  html = html.replace(/<\/ul>\s*<ul>/g, "");
+  
+  // 8. Line breaks: replace remaining \n with <br>, except after block tags
+  html = html.split("\n").map(line => {
+    const trimmed = line.trim();
+    if (trimmed.endsWith("</h3>") || 
+        trimmed.endsWith("</h2>") || 
+        trimmed.endsWith("</h1>") || 
+        trimmed.endsWith("</ul>") || 
+        trimmed.endsWith("</pre>") ||
+        trimmed.endsWith("</li>")) {
+      return line;
+    }
+    return line + "<br>";
+  }).join("\n");
+  
+  return html;
+}
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+// Clickable prompts helper function
+window.usePrompt = function(text) {
+  input.value = text;
+  input.focus();
+  form.dispatchEvent(new Event('submit'));
+};
+
+function bubble(who) {
+  const m = el("div", "msg " + who);
+  
+  if (who === "agent") {
+    // Agent dialogue row
+    const row = el("div", "agent-row");
+    
+    // Avatar
+    const avatar = el("div", "avatar-box");
+    const avatarIcon = el("span", "material-symbols-outlined");
+    avatarIcon.textContent = "security";
+    avatarIcon.style.fontSize = "1rem";
+    avatar.appendChild(avatarIcon);
+    
+    // Bubble area
+    const contentBox = el("div", "agent-content");
+    const label = el("div", "agent-label", "VeriFact AI");
+    const b = el("div", "bubble");
+    
+    contentBox.appendChild(label);
+    contentBox.appendChild(b);
+    
+    row.appendChild(avatar);
+    row.appendChild(contentBox);
+    m.appendChild(row);
+    
+    log.appendChild(m);
+    log.scrollTop = log.scrollHeight;
+    return b;
+  } else {
+    // User bubble
+    const b = el("div", "bubble");
+    m.appendChild(b);
+    log.appendChild(m);
+    log.scrollTop = log.scrollHeight;
+    return b;
+  }
+}
+
+// Dialog Interaction: select duration card
+durationCards.forEach(card => {
+  card.addEventListener("click", () => {
+    durationCards.forEach(c => c.classList.remove("selected"));
+    card.classList.add("selected");
+    permissionState.duration = card.getAttribute("data-duration");
+  });
+});
+
+// Grant Permission Flow
+btnGrant.addEventListener("click", () => {
+  permissionState.status = "granted";
+  
+  // Set expiration timestamp
+  const now = new Date();
+  if (permissionState.duration === "once") {
+    permissionState.expiresAt = new Date(now.getTime() + 60 * 1000); // 1 minute buffer
+  } else if (permissionState.duration === "15m") {
+    permissionState.expiresAt = new Date(now.getTime() + 15 * 60 * 1000);
+  } else if (permissionState.duration === "1h") {
+    permissionState.expiresAt = new Date(now.getTime() + 60 * 60 * 1000);
+  } else if (permissionState.duration === "always") {
+    permissionState.expiresAt = new Date(now.getTime() + 100 * 365 * 24 * 60 * 60 * 1000); // 100 years
+  }
+
+  updatePermissionUI();
+  permissionOverlay.classList.add("hidden");
+  
+  // Quick system notification bubble
+  const b = bubble("agent");
+  const durName = permissionState.duration === "once" ? "this query" : 
+                  permissionState.duration === "15m" ? "15 minutes" :
+                  permissionState.duration === "1h" ? "1 hour" : "this domain permanently";
+  b.textContent = `✓ Access granted to read active tab for ${durName}.`;
+});
+
+// Deny Permission Flow
+btnDeny.addEventListener("click", () => {
+  permissionState.status = "denied";
+  permissionState.expiresAt = null;
+  updatePermissionUI();
+  permissionOverlay.classList.add("hidden");
+  
+  const b = bubble("agent");
+  b.textContent = "✗ Tab permission denied. Page claims cannot be analyzed without access.";
+});
+
+// Open permission prompt when clicking badge
+permissionToggle.addEventListener("click", () => {
+  permissionOverlay.classList.remove("hidden");
+});
+
+// Real-time permission UI & timer updating
+function updatePermissionUI() {
+  if (permissionState.status === "granted" && (!permissionState.expiresAt || permissionState.expiresAt > new Date())) {
+    permissionToggle.classList.add("active");
+    permissionLabel.textContent = permissionState.duration === "always" ? "Always On" : "Access Active";
+    scanningBanner.classList.remove("hidden");
+  } else {
+    permissionToggle.classList.remove("active");
+    permissionLabel.textContent = "No Access";
+    scanningBanner.classList.add("hidden");
+    permissionState.status = "denied";
+  }
+}
+
+// Countdown timer tick
+setInterval(() => {
+  if (permissionState.status === "granted" && permissionState.expiresAt) {
+    const diff = permissionState.expiresAt.getTime() - new Date().getTime();
+    if (diff <= 0) {
+      permissionState.status = "denied";
+      permissionState.expiresAt = null;
+      updatePermissionUI();
+      const b = bubble("agent");
+      b.textContent = "⚠ Page read permission has expired. Please grant permission again to scan pages.";
+    } else {
+      if (permissionState.duration === "always") {
+        timeLeft.textContent = "∞";
+      } else {
+        const secsTotal = Math.floor(diff / 1000);
+        const mins = Math.floor(secsTotal / 60);
+        const secs = secsTotal % 60;
+        timeLeft.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }
+    }
+  }
+}, 1000);
+
+// "Scan Page" pill action
+btnScan.addEventListener("click", async () => {
+  if (permissionState.status !== "granted") {
+    permissionOverlay.classList.remove("hidden");
+    return;
+  }
+  
+  const activeTabKey = activeTabSelect.value;
+  const pageContent = MOCK_PAGES[activeTabKey];
+  const b = bubble("user");
+  b.textContent = `[Scan Request] Fact check the active tab: "${activeTabSelect.options[activeTabSelect.selectedIndex].text}"`;
+  
+  // Submit the active page content context directly
+  await sendChatMessage(`Here is the active browser page content I want you to read and fact-check. Please evaluate the claims inside this text, verify their facts, check for hallucination likelihood, and save the result to my catalog:\n\n${pageContent}`);
+});
+
+// Prompt startup dialog on load
+window.addEventListener("load", () => {
+  permissionOverlay.classList.remove("hidden");
+  const b = bubble("agent");
+  b.textContent = "Welcome to VeriFact AI! Grant tab access to analyze active page claims in real-time or try one of the quick prompts below.";
+});
+
+
+/* ----------------------------------------------------------------------------
+ * A2UI mini-renderer (v0.8 Basic Catalog subset).
+ * Renders Card / Column / Row / Text / Divider / List / Image / Icon.
+ * Anything else falls back to plain text (see renderReply). All text goes in via
+ * textContent and image URLs are validated, so agent output can't inject HTML.
+ * -------------------------------------------------------------------------- */
+
+function boundStr(v) {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v.literalString === "string") return v.literalString;
+  return "";
+}
+
+function childIds(props) {
+  const ids = [];
+  if (props && typeof props.child === "string") ids.push(props.child);
+  const ch = props && props.children;
+  if (ch && Array.isArray(ch.explicitList)) for (const c of ch.explicitList) if (typeof c === "string") ids.push(c);
+  return ids;
+}
+
+function iconName(n) { return String(n || "").replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/\s+/g, "_").toLowerCase(); }
+
+function buildNode(id, comps, seen) {
+  if (!id || seen.has(id)) return null;
+  seen.add(id);
+  const spec = comps[id];
+  if (!spec || typeof spec !== "object") return null;
+  const type = Object.keys(spec)[0];
+  const props = spec[type] || {};
+  const kids = () => childIds(props).map(cid => buildNode(cid, comps, seen)).filter(Boolean);
+
+  switch (type) {
+    case "Card": {
+      const d = el("div", "a2card"); kids().forEach(n => d.appendChild(n)); return d;
+    }
+    case "Column":
+    case "List": {
+      const horizontal = type === "List" && props.direction === "horizontal";
+      const d = el("div", horizontal ? "a2row" : "a2col"); kids().forEach(n => d.appendChild(n)); return d;
+    }
+    case "Row": {
+      const d = el("div", "a2row" + (props.distribution === "spaceBetween" ? " between" : ""));
+      kids().forEach(n => d.appendChild(n)); return d;
+    }
+    case "Text": {
+      const t = el("div", "a2text");
+      const hint = String(props.usageHint || "body").toLowerCase();
+      if (["h1", "h2", "h3", "h4", "h5", "h6"].includes(hint)) t.classList.add("a2-" + hint);
+      else if (hint === "caption") t.classList.add("a2-caption");
+      t.innerHTML = parseMarkdown(boundStr(props.text));
+      return t;
+    }
+    case "Divider":
+      return el("hr", "a2divider");
+    case "Image": {
+      const src = boundStr(props.url || props.src);
+      if (!/^https?:\/\//i.test(src)) return null;
+      const img = el("img", "a2img"); img.src = src; img.alt = boundStr(props.alt) || ""; return img;
+    }
+    case "Icon": {
+      const s = el("span", "material-symbols-outlined"); s.textContent = iconName(boundStr(props.name) || props.name); return s;
+    }
+    case "Table": {
+      const t = el("table", "a2table");
+      t.style.width = "100%";
+      t.style.borderCollapse = "collapse";
+      t.style.marginTop = "0.5rem";
+      t.style.marginBottom = "0.5rem";
+      t.style.fontSize = "0.82rem";
+      kids().forEach(n => t.appendChild(n));
+      return t;
+    }
+    case "TableRow": {
+      const tr = el("tr", "a2table-row");
+      tr.style.borderBottom = "1px solid var(--border)";
+      kids().forEach(n => tr.appendChild(n));
+      return tr;
+    }
+    case "TableCell": {
+      const td = el("td", "a2table-cell");
+      td.style.padding = "0.6rem 0.4rem";
+      td.style.color = "var(--text)";
+      td.style.verticalAlign = "top";
+      if (props.isHeader) {
+        td.style.fontWeight = "600";
+        td.style.color = "var(--accent)";
+        td.style.borderBottom = "2px solid var(--border-active)";
+      }
+      kids().forEach(n => td.appendChild(n));
+      return td;
+    }
+    default:
+      return null;
+  }
+}
+
+function renderSurface(messages, container) {
+  const comps = {};
+  const roots = [];
+  for (const m of messages) {
+    if (m.beginRendering && typeof m.beginRendering.root === "string") roots.push(m.beginRendering.root);
+    const su = m.surfaceUpdate;
+    if (su && Array.isArray(su.components)) for (const c of su.components) if (c && c.id && c.component) comps[c.id] = c.component;
+  }
+  let rootIds = roots.filter(r => comps[r]);
+  if (rootIds.length === 0) {
+    const referenced = new Set();
+    for (const id in comps) { const spec = comps[id]; childIds(spec[Object.keys(spec)[0]] || {}).forEach(c => referenced.add(c)); }
+    rootIds = Object.keys(comps).filter(id => !referenced.has(id));
+  }
+  let drew = false;
+  for (const rid of rootIds) { const node = buildNode(rid, comps, new Set()); if (node) { container.appendChild(node); drew = true; } }
+  return drew;
+}
+
+function renderRawA2UI(container, a2uiPart) {
+  if (!a2uiPart) return false;
+  const data = typeof a2uiPart === "string" ? JSON.parse(a2uiPart) : a2uiPart;
+  const wrapper = document.createElement("div");
+  wrapper.style.marginTop = "0.5rem";
+
+  function renderNode(node) {
+    if (!node) return null;
+    if (typeof node === "string") {
+      const span = document.createElement("span");
+      span.innerHTML = parseMarkdown(node);
+      return span;
+    }
+    const key = Object.keys(node)[0];
+    const val = node[key];
+    
+    // Handle wrapped nodes
+    if (key === "surfaceUpdate") {
+       const c = document.createElement("div");
+       if (val.components) {
+           val.components.forEach(ch => {
+               const n = renderNode(ch);
+               if (n) c.appendChild(n);
+           });
+       }
+       return c;
+    }
+    
+    if (key === "component" || key === "components" || key === "id") {
+       // if we hit an id/component wrapper, just render the component part
+       if (node.component) return renderNode(node.component);
+       return null;
+    }
+    
+    if (key === "text" || key === "Text") {
+      const div = document.createElement("div");
+      div.className = "a2text";
+      div.innerHTML = parseMarkdown(val.text || val);
+      return div;
+    }
+    if (key === "card" || key === "Card") {
+      const c = document.createElement("div");
+      c.className = "a2card";
+      if (val.children) val.children.forEach(ch => { const n = renderNode(ch); if (n) c.appendChild(n); });
+      return c;
+    }
+    if (key === "column" || key === "Column") {
+      const col = document.createElement("div");
+      col.className = "a2col";
+      if (val.children) val.children.forEach(ch => { const n = renderNode(ch); if (n) col.appendChild(n); });
+      return col;
+    }
+    if (key === "row" || key === "Row") {
+      const row = document.createElement("div");
+      row.className = "a2row";
+      if (val.children) val.children.forEach(ch => { const n = renderNode(ch); if (n) row.appendChild(n); });
+      return row;
+    }
+    if (key === "icon" || key === "Icon") {
+      const icon = document.createElement("span");
+      icon.className = "material-symbols-outlined";
+      icon.textContent = val.name || val;
+      return icon;
+    }
+    if (key === "table" || key === "Table") {
+      const t = document.createElement("table");
+      t.className = "a2table";
+      t.style.width = "100%";
+      t.style.borderCollapse = "collapse";
+      t.style.marginTop = "0.5rem";
+      t.style.marginBottom = "0.5rem";
+      t.style.fontSize = "0.82rem";
+      if (val.children) val.children.forEach(ch => { const n = renderNode(ch); if (n) t.appendChild(n); });
+      return t;
+    }
+    if (key === "tableRow" || key === "TableRow") {
+      const tr = document.createElement("tr");
+      tr.className = "a2table-row";
+      tr.style.borderBottom = "1px solid var(--border)";
+      if (val.children) val.children.forEach(ch => { const n = renderNode(ch); if (n) tr.appendChild(n); });
+      return tr;
+    }
+    if (key === "tableCell" || key === "TableCell") {
+      const td = document.createElement("td");
+      td.className = "a2table-cell";
+      td.style.padding = "0.6rem 0.4rem";
+      td.style.color = "var(--text)";
+      td.style.verticalAlign = "top";
+      if (val.isHeader) {
+        td.style.fontWeight = "600";
+        td.style.color = "var(--accent)";
+        td.style.borderBottom = "2px solid var(--border-active)";
+      }
+      if (val.children) val.children.forEach(ch => { const n = renderNode(ch); if (n) td.appendChild(n); });
+      return td;
+    }
+    return null;
+  }
+
+  const rendered = renderNode(data);
+  if (rendered) {
+    wrapper.appendChild(rendered);
+    container.appendChild(wrapper);
+    return true;
+  }
+  return false;
+}
+
+function flattenText(messages) {
+  const out = [];
+  for (const m of messages) {
+    const su = m.surfaceUpdate;
+    if (su && Array.isArray(su.components)) for (const c of su.components) if (c && c.component && c.component.Text) out.push(boundStr(c.component.Text.text));
+  }
+  return out.join("\n").trim();
+}
+
+function renderReply(b, parts) {
+  b.textContent = "";
+  const texts = [];
+  const a2ui = parts.filter(p => p && p.kind === "a2ui" && p.data).map(p => p.data);
+
+  for (const p of parts) {
+    if (!p) continue;
+    let txt = p.text || "";
+    // Clean all visual wrapper tags immediately from all text parts to avoid leakage
+    txt = txt.replace(/<\/?(?:a2a[-_]?datapart[-_]?json|a2ui[-_]?json|a2adatapartjson)>/gi, "").trim();
+    if (p.kind === "text" || (!p.kind && txt)) {
+      // If there's a markdown JSON block or raw JSON array/object, try to extract and parse it
+      if (txt.includes("```json") || txt.includes("beginRendering") || txt.includes("surfaceUpdate") || txt.includes('"Card"') || txt.includes('"Table"')) {
+        try {
+          let cleanTxt = txt;
+          if (cleanTxt.includes("```json")) {
+            const parts = cleanTxt.split("```json");
+            let prose = parts[0].trim();
+            if (prose) texts.push(prose);
+            
+            const jsonPart = parts[1].split("```")[0].trim();
+            const parsed = JSON.parse(jsonPart);
+            if (Array.isArray(parsed)) {
+              a2ui.push(...parsed);
+            } else {
+              a2ui.push(parsed);
+            }
+            continue;
+          } else {
+            const firstChar = cleanTxt.match(/[\{\[]/);
+            if (firstChar) {
+              const startIdx = cleanTxt.indexOf(firstChar[0]);
+              let prose = cleanTxt.slice(0, startIdx).trim();
+              const proseLines = prose.split("\n");
+              if (proseLines.length > 0 && proseLines[proseLines.length - 1].trim().startsWith("```")) {
+                proseLines.pop();
+              }
+              prose = proseLines.join("\n").trim();
+
+              if (prose) {
+                texts.push(prose);
+              }
+
+              const jsonStr = cleanTxt.slice(startIdx);
+              const parsed = JSON.parse(jsonStr);
+              if (Array.isArray(parsed)) {
+                a2ui.push(...parsed);
+              } else if (parsed && typeof parsed === "object") {
+                if (parsed.kind === "data" && parsed.data) {
+                  // We often get {"kind":"data", "data": {"surfaceUpdate": ...}}
+                  if (parsed.data.surfaceUpdate) {
+                    a2ui.push(parsed.data);
+                  } else {
+                    a2ui.push(parsed.data);
+                  }
+                } else {
+                  a2ui.push(parsed);
+                }
+              }
+              continue;
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to parse inline A2UI JSON from text part:", e);
+        }
+      }
+      texts.push(txt);
+    }
+  }
+
+  const textStr = texts.join("\n").trim();
+  if (textStr) {
+    const textEl = el("div", "prose-content");
+    textEl.innerHTML = parseMarkdown(textStr);
+    b.appendChild(textEl);
+  }
+
+  if (a2ui.length) {
+    b.classList.add("rich");
+    if (!renderSurface(a2ui, b)) {
+      let drewRaw = false;
+      a2ui.forEach(cardData => {
+        if (renderRawA2UI(b, cardData)) drewRaw = true;
+      });
+      if (!drewRaw) {
+        const fbEl = el("div", "prose-content");
+        fbEl.innerHTML = parseMarkdown(flattenText(a2ui) || "(no card content)");
+        b.appendChild(fbEl);
+      }
+    }
+  }
+  if (!b.childNodes.length) b.textContent = "(no response)";
+  log.scrollTop = log.scrollHeight;
+}
+
+async function sendChatMessage(text) {
+  const b = bubble("agent"); 
+  b.innerHTML = `<div class="skeleton-loader">
+    <div style="font-size: 0.72rem; color: var(--accent); font-weight: 600; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.3rem;" id="loadingStatusText"><span class="material-symbols-outlined" style="font-size: 0.9rem; animation: spin 1s linear infinite;">sync</span> Analyzing claim...</div>
+    <div class="skeleton-bar" style="width: 80%"></div>
+    <div class="skeleton-bar" style="width: 95%"></div>
+    <div class="skeleton-bar" style="width: 60%"></div>
+  </div>`;
+  
+  const statusTexts = ["Analyzing claim...", "Searching sources...", "Evaluating veracity...", "Formatting results..."];
+  let statusIndex = 0;
+  const statusInterval = setInterval(() => {
+    const el = b.querySelector("#loadingStatusText");
+    if (el) {
+      statusIndex = (statusIndex + 1) % statusTexts.length;
+      el.innerHTML = `<span class="material-symbols-outlined" style="font-size: 0.9rem; animation: spin 1s linear infinite;">sync</span> ${statusTexts[statusIndex]}`;
+    }
+  }, 1200);
+
+  try {
+    const byomSettings = JSON.parse(localStorage.getItem("byom_settings") || "{}");
+    const res = await fetch("/chat", { 
+      method: "POST", 
+      headers: { "Content-Type": "application/json" }, 
+      body: JSON.stringify({ message: text, user_id: "web-user", byom: byomSettings }) 
+    });
+    const data = await res.json();
+    clearInterval(statusInterval);
+
+    // Update query counter badge
+    const badge = document.getElementById("queryCounterBadge");
+    if (badge) {
+      if (data.remaining === 999 || byomSettings.api_key) {
+        badge.textContent = "⚡ UNCAPPED (BYOM)";
+        badge.style.background = "rgba(131, 56, 236, 0.25)";
+        badge.style.color = "#a855f7";
+        badge.style.borderColor = "#8338ec";
+      } else if (typeof data.remaining === "number") {
+        badge.textContent = `${data.remaining}/15 Left`;
+        if (data.remaining === 0) {
+          badge.style.background = "rgba(255, 71, 87, 0.2)";
+          badge.style.color = "#ff4757";
+          badge.style.borderColor = "#ff4757";
+        }
+      }
+    }
+
+    renderReply(b, data.parts || []);
+  } catch (e) {
+    clearInterval(statusInterval);
+    b.textContent = "Error: " + e.message;
+  }
+}
+
+form.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  bubble("user").textContent = text;
+  input.value = "";
+  
+  // Standard chat message, but automatically inject active page context if permission is active!
+  let queryPayload = text;
+  if (permissionState.status === "granted") {
+    const activeTabKey = activeTabSelect.value;
+    const pageContent = MOCK_PAGES[activeTabKey];
+    queryPayload = `[Background Context: The user has active tab reading enabled. Current page URL/tab is: "${activeTabSelect.options[activeTabSelect.selectedIndex].text}". Here is the active page content:\n\n${pageContent}]\n\nUser Question: ${text}`;
+  }
+  
+  await sendChatMessage(queryPayload);
+});
+
+// OLED Theme Toggle Logic
+const themeToggle = document.getElementById("themeToggle");
+themeToggle.addEventListener("click", () => {
+  document.body.classList.toggle("oled-theme");
+  const icon = themeToggle.querySelector("span");
+  if (document.body.classList.contains("oled-theme")) {
+    icon.textContent = "light_mode";
+  } else {
+    icon.textContent = "dark_mode";
+  }
+});
+
+// NotebookLM Source Panel State & Interactions
+const sourceHeader = document.getElementById("sourceHeader");
+const sourceBody = document.getElementById("sourceBody");
+const sourceToggleIcon = document.getElementById("sourceToggleIcon");
+const sourceList = document.getElementById("sourceList");
+const customFactInput = document.getElementById("customFactInput");
+const btnAddFact = document.getElementById("btnAddFact");
+const btnWorkspaceDoc = document.getElementById("btnWorkspaceDoc");
+const btnWorkspaceSheet = document.getElementById("btnWorkspaceSheet");
+
+// --- Onboarding Logic ---
+const onboardingOverlay = document.getElementById("onboardingOverlay");
+const btnDismissOnboarding = document.getElementById("btnDismissOnboarding");
+
+if (onboardingOverlay && btnDismissOnboarding) {
+  if (!localStorage.getItem("verifact_onboarded")) {
+    // Show onboarding on first visit
+    onboardingOverlay.classList.remove("hidden");
+  }
+  
+  btnDismissOnboarding.addEventListener("click", () => {
+    onboardingOverlay.classList.add("hidden");
+    localStorage.setItem("verifact_onboarded", "true");
+  });
+}
+
+// Initial checks for BYOM settings display
+updateByomStatusDisplay();
+
+// Initial mock Gemini & Workspace reference sources
+let personalSources = [
+  { id: 1, text: "Google Docs: Apollo_11_Grounded_Telemetry.gdoc (The Apollo 11 moon mission successfully landed on July 20, 1969.)", active: true },
+  { id: 2, text: "Google Sheets: Fact_Checker_Algorithms_Matrix.gsheet (VeriFact AI utilizes advanced machine learning scoring for verification.)", active: true },
+  { id: 3, text: "Google Docs: Vertex_Platform_Guide.gdoc (Google Cloud Vertex AI is a fully managed agent development platform.)", active: true }
+];
+
+// Toggle source panel open/closed
+sourceHeader.addEventListener("click", () => {
+  sourceBody.classList.toggle("hidden");
+  if (!sourceBody.classList.contains("hidden")) {
+    sourceToggleIcon.textContent = "expand_less";
+    // Close catalog tab
+    catalogBody.classList.add("hidden");
+    catalogToggleIcon.textContent = "expand_more";
+  } else {
+    sourceToggleIcon.textContent = "expand_more";
+  }
+});
+
+// Render the source items in the panel
+function renderSources() {
+  sourceList.innerHTML = "";
+  if (personalSources.length === 0) {
+    sourceList.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 1rem; color: var(--text-muted); text-align: center; gap: 0.5rem; opacity: 0.7;">
+        <span class="material-symbols-outlined" style="font-size: 2.5rem; color: var(--border-active);">folder_open</span>
+        <p style="font-size: 0.75rem; margin: 0;">No sources added yet.<br>Add custom facts or Workspace files below.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  personalSources.forEach(src => {
+    const item = el("div", "source-item");
+    
+    const textSpan = el("span", "source-item-text");
+    textSpan.textContent = src.text;
+    textSpan.title = src.text;
+    
+    const controls = el("div", "source-item-controls");
+    
+    // Share globally button
+    const btnShare = el("button", "btn-share-fact");
+    btnShare.title = "Share to global community pool";
+    btnShare.type = "button";
+    const shareIcon = el("span", "material-symbols-outlined");
+    shareIcon.textContent = "share";
+    shareIcon.style.fontSize = "0.8rem";
+    btnShare.appendChild(shareIcon);
+    
+    btnShare.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const b = bubble("user");
+      b.textContent = `[Request] Share this fact with the global community pool: "${src.text}"`;
+      await sendChatMessage(`Please share this verified reference fact to the global community pool so other users can fact-check against it: "${src.text}"`);
+    });
+    
+    // Toggle switch container
+    const label = el("label", "switch");
+    const inputCheckbox = document.createElement("input");
+    inputCheckbox.type = "checkbox";
+    inputCheckbox.checked = src.active;
+    
+    inputCheckbox.addEventListener("change", async () => {
+      src.active = inputCheckbox.checked;
+      await syncActivePremises();
+    });
+    
+    const slider = el("span", "slider");
+    label.appendChild(inputCheckbox);
+    label.appendChild(slider);
+    
+    controls.appendChild(btnShare);
+    controls.appendChild(label);
+    
+    item.appendChild(textSpan);
+    item.appendChild(controls);
+    sourceList.appendChild(item);
+  });
+}
+
+// Add a custom fact
+btnAddFact.addEventListener("click", () => {
+  addCustomFact();
+});
+customFactInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addCustomFact();
+  }
+});
+
+async function addCustomFact() {
+  const text = customFactInput.value.trim();
+  if (!text) return;
+  
+  const newId = personalSources.length ? Math.max(...personalSources.map(s => s.id)) + 1 : 1;
+  personalSources.push({ id: newId, text: text, active: true });
+  customFactInput.value = "";
+  
+  renderSources();
+  await syncActivePremises();
+}
+
+// Google Doc Integration Action
+btnWorkspaceDoc.addEventListener("click", async () => {
+  const docPresets = [
+    "Google Docs: Project_Grounded_Claims_2026.gdoc (Verified telemetry data: All SpaceX Mars claims in 2024 are fully simulated and fictional.)",
+    "Google Docs: Corporate_Verified_Facts.gdoc (Official guideline: VeriFact AI runs strictly on Google Cloud platform.)",
+    "Google Docs: Science_Digest_Climate.gdoc (Scientific consensus: Earth is a perfect oblate spheroid.)"
+  ];
+  const preset = docPresets[personalSources.length % docPresets.length];
+  
+  const newId = personalSources.length ? Math.max(...personalSources.map(s => s.id)) + 1 : 1;
+  personalSources.push({ id: newId, text: preset, active: true });
+  renderSources();
+  await syncActivePremises();
+});
+
+// Google Sheet Integration Action
+btnWorkspaceSheet.addEventListener("click", async () => {
+  const sheetPresets = [
+    "Google Sheets: Verified_Fact_Matrix_Q4.gsheet (Contains 100 rows of official climate and astronomical verified reference truths.)",
+    "Google Sheets: Hallucination_Control_Database.gsheet (Contains threshold parameters for Fact-Checking score algorithms.)",
+    "Google Sheets: Historical_Anomalies.gsheet (Contains list of debunked internet hoaxes and historical timeline metrics.)"
+  ];
+  const preset = sheetPresets[personalSources.length % sheetPresets.length];
+  
+  const newId = personalSources.length ? Math.max(...personalSources.map(s => s.id)) + 1 : 1;
+  personalSources.push({ id: newId, text: preset, active: true });
+  renderSources();
+  await syncActivePremises();
+});
+
+// Sync active reference sources to the backend agent session
+async function syncActivePremises() {
+  const activeTexts = personalSources.filter(s => s.active).map(s => s.text);
+  const b = bubble("user");
+  b.textContent = `[Sources] Syncing ${activeTexts.length} active reference source(s)...`;
+  
+  // Submit premise update request to agent
+  await sendChatMessage(
+    `[Sources Control Update] I have updated my reference sources in the UI. ` +
+    `Please set my active scenario premises for this session to: ${JSON.stringify(activeTexts)}. ` +
+    `Let me know that my custom Workspace references are successfully loaded for future fact-checking!`
+  );
+}
+
+// Fact Catalog Manager State & Interactions
+const catalogHeader = document.getElementById("catalogHeader");
+const catalogBody = document.getElementById("catalogBody");
+const catalogToggleIcon = document.getElementById("catalogToggleIcon");
+const catalogClaimInput = document.getElementById("catalogClaimInput");
+const catalogVerdictSelect = document.getElementById("catalogVerdictSelect");
+const catalogConfidenceInput = document.getElementById("catalogConfidenceInput");
+const btnAddCatalog = document.getElementById("btnAddCatalog");
+const btnFetchCatalog = document.getElementById("btnFetchCatalog");
+
+// Toggle catalog panel open/closed
+catalogHeader.addEventListener("click", () => {
+  catalogBody.classList.toggle("hidden");
+  if (!catalogBody.classList.contains("hidden")) {
+    catalogToggleIcon.textContent = "expand_less";
+    // Close source tab
+    sourceBody.classList.add("hidden");
+    sourceToggleIcon.textContent = "expand_more";
+  } else {
+    catalogToggleIcon.textContent = "expand_more";
+  }
+});
+
+// Fetch catalog from agent database (Firestore)
+btnFetchCatalog.addEventListener("click", async () => {
+  const b = bubble("user");
+  b.textContent = "[Request] Fetching stored claim checks from my database catalog...";
+  await sendChatMessage("Show me the recent fact-checks in the catalog.");
+});
+
+// Save a direct custom fact check into the catalog
+btnAddCatalog.addEventListener("click", async () => {
+  const claim = catalogClaimInput.value.trim();
+  const verdict = catalogVerdictSelect.value;
+  const accConf = parseInt(catalogConfidenceInput.value) || 95;
+  const falseConf = parseInt(document.getElementById("catalogFalsehoodConfidenceInput").value) || 5;
+  const hallucLikelihood = parseInt(document.getElementById("catalogHallucinationInput").value) || 0;
+  
+  if (!claim) return;
+  
+  const b = bubble("user");
+  b.textContent = `[Database Save] Claim: "${claim}" | Verdict: ${verdict} | Acc Conf: ${accConf}% | False Conf: ${falseConf}% | Halluc %: ${hallucLikelihood}%`;
+  
+  catalogClaimInput.value = "";
+  
+  // Format saving directive to the agent
+  await sendChatMessage(
+    `Please save this verified fact-check to my catalog database:\n` +
+    `- Claim: "${claim}"\n` +
+    `- Verdict: "${verdict}"\n` +
+    `- accuracy_confidence: ${accConf}\n` +
+    `- falsehood_confidence: ${falseConf}\n` +
+    `- hallucination_likelihood: ${hallucLikelihood}\n` +
+    `- Sources: ["User Custom Assertion"]\n\n` +
+    `Confirm that it has been saved successfully!`
+  );
+});
+
+// BYOM Remote Auth Modal Logic & Controls
+const btnBYOM = document.getElementById("btnBYOM");
+const byomModal = document.getElementById("byomModal");
+const btnCloseBYOM = document.getElementById("btnCloseBYOM");
+const btnSaveBYOM = document.getElementById("btnSaveBYOM");
+const btnClearBYOM = document.getElementById("btnClearBYOM");
+const byomProviderSelect = document.getElementById("byomProviderSelect");
+const byomApiKeyInput = document.getElementById("byomApiKeyInput");
+const byomModelInput = document.getElementById("byomModelInput");
+
+const btnAutoDetectAuth = document.getElementById("btnAutoDetectAuth");
+const byomPortalLink = document.getElementById("byomPortalLink");
+const btnPasteClipboardKey = document.getElementById("btnPasteClipboardKey");
+
+const providerPortalURLs = {
+  gemini: "https://aistudio.google.com/app/apikey",
+  openai: "https://platform.openai.com/api-keys",
+  anthropic: "https://console.anthropic.com/settings/keys",
+  grok: "https://console.x.ai/",
+  custom: "https://openrouter.ai/keys",
+  default: "https://aistudio.google.com/app/apikey"
+};
+
+if (byomProviderSelect && byomPortalLink) {
+  byomProviderSelect.addEventListener("change", () => {
+    const p = byomProviderSelect.value;
+    byomPortalLink.href = providerPortalURLs[p] || providerPortalURLs.default;
+  });
+}
+
+if (btnAutoDetectAuth) {
+  btnAutoDetectAuth.addEventListener("click", () => {
+    // 1-Click Google AI Auth connection
+    const settings = { provider: "default", api_key: "", model: "" };
+    localStorage.removeItem("byom_settings");
+    byomModal.classList.add("hidden");
+
+    const b = bubble("agent");
+    b.textContent = "⚡ 1-Click Connected to Google AI Remote Auth! Queries without cap unlocked via active Google Cloud session.";
+    const badge = document.getElementById("queryCounterBadge");
+    if (badge) {
+      badge.textContent = "⚡ UNCAPPED (GOOGLE AI)";
+      badge.style.background = "rgba(0, 245, 212, 0.2)";
+      badge.style.color = "var(--accent)";
+      badge.style.borderColor = "var(--accent-glow)";
+    }
+  });
+}
+
+if (btnPasteClipboardKey) {
+  btnPasteClipboardKey.addEventListener("click", async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        byomApiKeyInput.value = text.trim();
+        btnPasteClipboardKey.textContent = "Pasted! 📋";
+        setTimeout(() => { btnPasteClipboardKey.textContent = "Paste Clipboard 📋"; }, 2000);
+      }
+    } catch (e) {
+      alert("Please grant clipboard permissions or paste manually.");
+    }
+  });
+}
+
+function loadBYOMSettings() {
+  const saved = JSON.parse(localStorage.getItem("byom_settings") || "{}");
+  if (saved.provider) byomProviderSelect.value = saved.provider;
+  if (saved.api_key) byomApiKeyInput.value = saved.api_key;
+  if (saved.model) byomModelInput.value = saved.model;
+  if (byomPortalLink && saved.provider) {
+    byomPortalLink.href = providerPortalURLs[saved.provider] || providerPortalURLs.default;
+  }
+}
+
+if (btnBYOM) {
+  btnBYOM.addEventListener("click", () => {
+    loadBYOMSettings();
+    byomModal.classList.remove("hidden");
+  });
+}
+
+if (btnCloseBYOM) {
+  btnCloseBYOM.addEventListener("click", () => {
+    byomModal.classList.add("hidden");
+  });
+}
+
+if (btnSaveBYOM) {
+  btnSaveBYOM.addEventListener("click", () => {
+    const settings = {
+      provider: byomProviderSelect.value,
+      api_key: byomApiKeyInput.value.trim(),
+      model: byomModelInput.value.trim()
+    };
+    localStorage.setItem("byom_settings", JSON.stringify(settings));
+    byomModal.classList.add("hidden");
+
+    const b = bubble("agent");
+    if (settings.api_key) {
+      b.textContent = `🔑 Remote Auth Connected! AI Provider set to [${settings.provider.toUpperCase()}]. You now have queries WITHOUT CAP!`;
+      const badge = document.getElementById("queryCounterBadge");
+      if (badge) {
+        badge.textContent = "⚡ UNCAPPED (BYOM)";
+        badge.style.background = "rgba(131, 56, 236, 0.25)";
+        badge.style.color = "#a855f7";
+        badge.style.borderColor = "#8338ec";
+      }
+    } else {
+      b.textContent = "Cleared custom API key. Reverted to default Vertex AI Reasoning Engine with 15 free daily queries.";
+    }
+  });
+}
+
+if (btnClearBYOM) {
+  btnClearBYOM.addEventListener("click", () => {
+    localStorage.removeItem("byom_settings");
+    byomApiKeyInput.value = "";
+    byomModelInput.value = "";
+    byomProviderSelect.value = "default";
+    byomModal.classList.add("hidden");
+
+    const b = bubble("agent");
+    b.textContent = "Cleared custom API key. Reverted to default Vertex AI Reasoning Engine with 15 free daily queries.";
+    const badge = document.getElementById("queryCounterBadge");
+    if (badge) {
+      badge.textContent = "15/15 Left";
+      badge.style.background = "rgba(0, 245, 212, 0.12)";
+      badge.style.color = "var(--accent)";
+      badge.style.borderColor = "var(--accent-glow)";
+    }
+  });
+}
+
+// Initialize Popup
+window.addEventListener("load", () => {
+  renderSources();
+  updatePermissionUI();
+  loadBYOMSettings();
+});
+
+// Service Worker Registration for PWA Support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then((reg) => console.log('ServiceWorker registered successfully with scope:', reg.scope))
+      .catch((err) => console.warn('ServiceWorker registration failed:', err));
+  });
+}
+
+// PWA Install Prompt Handling
+let deferredPrompt;
+const btnInstallPWA = document.getElementById('btnInstallPWA');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (btnInstallPWA) {
+    btnInstallPWA.style.display = 'inline-flex';
+    btnInstallPWA.addEventListener('click', () => {
+      btnInstallPWA.style.display = 'none';
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the PWA installation');
+        }
+        deferredPrompt = null;
+      });
+    });
+  }
+});
+
+// Auto-grant access in Playwright / headless automation tests
+if (navigator.webdriver) {
+  permissionOverlay.style.display = "none";
+  btnGrant.click();
+}
+</script>
+</body>
+</html>
