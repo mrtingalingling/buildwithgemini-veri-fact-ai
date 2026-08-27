@@ -126,13 +126,27 @@ btnSettings.addEventListener("click", () => {
 // Toggle Collapsible Source Panel
 sourceHeader.addEventListener("click", () => {
   sourceBody.classList.toggle("hidden");
-  sourceToggleIcon.textContent = sourceBody.classList.contains("hidden") ? "expand_more" : "expand_less";
+  if (!sourceBody.classList.contains("hidden")) {
+    sourceToggleIcon.textContent = "expand_less";
+    // Close catalog tab
+    catalogBody.classList.add("hidden");
+    catalogToggleIcon.textContent = "expand_more";
+  } else {
+    sourceToggleIcon.textContent = "expand_more";
+  }
 });
 
 // Toggle Collapsible Catalog Panel
 catalogHeader.addEventListener("click", () => {
   catalogBody.classList.toggle("hidden");
-  catalogToggleIcon.textContent = catalogBody.classList.contains("hidden") ? "expand_more" : "expand_less";
+  if (!catalogBody.classList.contains("hidden")) {
+    catalogToggleIcon.textContent = "expand_less";
+    // Close source tab
+    sourceBody.classList.add("hidden");
+    sourceToggleIcon.textContent = "expand_more";
+  } else {
+    catalogToggleIcon.textContent = "expand_more";
+  }
 });
 
 // Render Sources List

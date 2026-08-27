@@ -1735,10 +1735,13 @@ let personalSources = [
 // Toggle source panel open/closed
 sourceHeader.addEventListener("click", () => {
   sourceBody.classList.toggle("hidden");
-  if (sourceBody.classList.contains("hidden")) {
-    sourceToggleIcon.textContent = "expand_more";
-  } else {
+  if (!sourceBody.classList.contains("hidden")) {
     sourceToggleIcon.textContent = "expand_less";
+    // Close catalog tab
+    catalogBody.classList.add("hidden");
+    catalogToggleIcon.textContent = "expand_more";
+  } else {
+    sourceToggleIcon.textContent = "expand_more";
   }
 });
 
@@ -1884,10 +1887,13 @@ const btnFetchCatalog = document.getElementById("btnFetchCatalog");
 // Toggle catalog panel open/closed
 catalogHeader.addEventListener("click", () => {
   catalogBody.classList.toggle("hidden");
-  if (catalogBody.classList.contains("hidden")) {
-    catalogToggleIcon.textContent = "expand_more";
-  } else {
+  if (!catalogBody.classList.contains("hidden")) {
     catalogToggleIcon.textContent = "expand_less";
+    // Close source tab
+    sourceBody.classList.add("hidden");
+    sourceToggleIcon.textContent = "expand_more";
+  } else {
+    catalogToggleIcon.textContent = "expand_more";
   }
 });
 
