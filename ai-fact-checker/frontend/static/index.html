@@ -1545,6 +1545,96 @@ function renderSurface(messages, container) {
   return drew;
 }
 
+function renderRawA2UI(container, a2uiPart) {
+  if (!a2uiPart) return false;
+  const data = typeof a2uiPart === "string" ? JSON.parse(a2uiPart) : a2uiPart;
+  const wrapper = document.createElement("div");
+  wrapper.style.marginTop = "0.5rem";
+
+  function renderNode(node) {
+    if (!node) return null;
+    if (typeof node === "string") {
+      const span = document.createElement("span");
+      span.innerHTML = parseMarkdown(node);
+      return span;
+    }
+    const key = Object.keys(node)[0];
+    const val = node[key];
+    
+    if (key === "text" || key === "Text") {
+      const div = document.createElement("div");
+      div.className = "a2text";
+      div.innerHTML = parseMarkdown(val.text || val);
+      return div;
+    }
+    if (key === "card" || key === "Card") {
+      const c = document.createElement("div");
+      c.className = "a2card";
+      if (val.children) val.children.forEach(ch => { const n = renderNode(ch); if (n) c.appendChild(n); });
+      return c;
+    }
+    if (key === "column" || key === "Column") {
+      const col = document.createElement("div");
+      col.className = "a2col";
+      if (val.children) val.children.forEach(ch => { const n = renderNode(ch); if (n) col.appendChild(n); });
+      return col;
+    }
+    if (key === "row" || key === "Row") {
+      const row = document.createElement("div");
+      row.className = "a2row";
+      if (val.children) val.children.forEach(ch => { const n = renderNode(ch); if (n) row.appendChild(n); });
+      return row;
+    }
+    if (key === "icon" || key === "Icon") {
+      const icon = document.createElement("span");
+      icon.className = "material-symbols-outlined";
+      icon.textContent = val.name || val;
+      return icon;
+    }
+    if (key === "table" || key === "Table") {
+      const t = document.createElement("table");
+      t.className = "a2table";
+      t.style.width = "100%";
+      t.style.borderCollapse = "collapse";
+      t.style.marginTop = "0.5rem";
+      t.style.marginBottom = "0.5rem";
+      t.style.fontSize = "0.82rem";
+      if (val.children) val.children.forEach(ch => { const n = renderNode(ch); if (n) t.appendChild(n); });
+      return t;
+    }
+    if (key === "tableRow" || key === "TableRow") {
+      const tr = document.createElement("tr");
+      tr.className = "a2table-row";
+      tr.style.borderBottom = "1px solid var(--border)";
+      if (val.children) val.children.forEach(ch => { const n = renderNode(ch); if (n) tr.appendChild(n); });
+      return tr;
+    }
+    if (key === "tableCell" || key === "TableCell") {
+      const td = document.createElement("td");
+      td.className = "a2table-cell";
+      td.style.padding = "0.6rem 0.4rem";
+      td.style.color = "var(--text)";
+      td.style.verticalAlign = "top";
+      if (val.isHeader) {
+        td.style.fontWeight = "600";
+        td.style.color = "var(--accent)";
+        td.style.borderBottom = "2px solid var(--border-active)";
+      }
+      if (val.children) val.children.forEach(ch => { const n = renderNode(ch); if (n) td.appendChild(n); });
+      return td;
+    }
+    return null;
+  }
+
+  const rendered = renderNode(data);
+  if (rendered) {
+    wrapper.appendChild(rendered);
+    container.appendChild(wrapper);
+    return true;
+  }
+  return false;
+}
+
 function flattenText(messages) {
   const out = [];
   for (const m of messages) {
@@ -1629,9 +1719,15 @@ function renderReply(b, parts) {
   if (a2ui.length) {
     b.classList.add("rich");
     if (!renderSurface(a2ui, b)) {
-      const fbEl = el("div", "prose-content");
-      fbEl.innerHTML = parseMarkdown(flattenText(a2ui) || "(no card content)");
-      b.appendChild(fbEl);
+      let drewRaw = false;
+      a2ui.forEach(cardData => {
+        if (renderRawA2UI(b, cardData)) drewRaw = true;
+      });
+      if (!drewRaw) {
+        const fbEl = el("div", "prose-content");
+        fbEl.innerHTML = parseMarkdown(flattenText(a2ui) || "(no card content)");
+        b.appendChild(fbEl);
+      }
     }
   }
   if (!b.childNodes.length) b.textContent = "(no response)";
