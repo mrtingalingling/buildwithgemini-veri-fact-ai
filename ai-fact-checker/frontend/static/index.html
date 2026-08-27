@@ -1565,44 +1565,51 @@ function renderReply(b, parts) {
     // Clean all visual wrapper tags immediately from all text parts to avoid leakage
     txt = txt.replace(/<\/?(?:a2a[-_]?datapart[-_]?json|a2ui[-_]?json|a2adatapartjson)>/gi, "").trim();
     if (p.kind === "text" || (!p.kind && txt)) {
-      if (txt.includes("beginRendering") || txt.includes("surfaceUpdate") || txt.includes("dataModelUpdate")) {
+      // If there's a markdown JSON block or raw JSON array/object, try to extract and parse it
+      if (txt.includes("```json") || txt.includes("beginRendering") || txt.includes("surfaceUpdate") || txt.includes('"Card"') || txt.includes('"Table"')) {
         try {
           let cleanTxt = txt;
-          if (cleanTxt.startsWith("```")) {
-            const lines = cleanTxt.split("\n");
-            lines.shift();
-            if (lines.length > 0 && lines[lines.length - 1].trim() === "```") {
-              lines.pop();
-            }
-            cleanTxt = lines.join("\n").trim();
-          }
-
-          const firstChar = cleanTxt.match(/[\{\[]/);
-          if (firstChar) {
-            const startIdx = cleanTxt.indexOf(firstChar[0]);
-            let prose = cleanTxt.slice(0, startIdx).trim();
-            const proseLines = prose.split("\n");
-            if (proseLines.length > 0 && proseLines[proseLines.length - 1].trim().startsWith("```")) {
-              proseLines.pop();
-            }
-            prose = proseLines.join("\n").trim();
-
-            if (prose) {
-              texts.push(prose);
-            }
-
-            const jsonStr = cleanTxt.slice(startIdx);
-            const parsed = JSON.parse(jsonStr);
+          if (cleanTxt.includes("```json")) {
+            const parts = cleanTxt.split("```json");
+            let prose = parts[0].trim();
+            if (prose) texts.push(prose);
+            
+            const jsonPart = parts[1].split("```")[0].trim();
+            const parsed = JSON.parse(jsonPart);
             if (Array.isArray(parsed)) {
               a2ui.push(...parsed);
-            } else if (parsed && typeof parsed === "object") {
-              if (parsed.kind === "data" && parsed.data) {
-                a2ui.push(parsed.data);
-              } else {
-                a2ui.push(parsed);
-              }
+            } else {
+              a2ui.push(parsed);
             }
             continue;
+          } else {
+            const firstChar = cleanTxt.match(/[\{\[]/);
+            if (firstChar) {
+              const startIdx = cleanTxt.indexOf(firstChar[0]);
+              let prose = cleanTxt.slice(0, startIdx).trim();
+              const proseLines = prose.split("\n");
+              if (proseLines.length > 0 && proseLines[proseLines.length - 1].trim().startsWith("```")) {
+                proseLines.pop();
+              }
+              prose = proseLines.join("\n").trim();
+
+              if (prose) {
+                texts.push(prose);
+              }
+
+              const jsonStr = cleanTxt.slice(startIdx);
+              const parsed = JSON.parse(jsonStr);
+              if (Array.isArray(parsed)) {
+                a2ui.push(...parsed);
+              } else if (parsed && typeof parsed === "object") {
+                if (parsed.kind === "data" && parsed.data) {
+                  a2ui.push(parsed.data);
+                } else {
+                  a2ui.push(parsed);
+                }
+              }
+              continue;
+            }
           }
         } catch (e) {
           console.warn("Failed to parse inline A2UI JSON from text part:", e);

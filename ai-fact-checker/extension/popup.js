@@ -589,18 +589,43 @@ async function sendChatMessage(msgText) {
       txt = txt.replace(/<\/?(?:a2a[-_]?datapart[-_]?json|a2ui[-_]?json|a2adatapartjson)>/gi, "").trim();
 
       if (p.kind === "text" || (!p.kind && txt)) {
-        if (txt.includes("beginRendering") || txt.includes("surfaceUpdate") || txt.includes("dataModelUpdate")) {
+        // If there's a markdown JSON block or raw JSON array/object, try to extract and parse it
+        if (txt.includes("```json") || txt.includes("beginRendering") || txt.includes("surfaceUpdate") || txt.includes('"Card"') || txt.includes('"Table"')) {
           try {
-            const firstChar = txt.match(/[\{\[]/);
-            if (firstChar) {
-              const startIdx = txt.indexOf(firstChar[0]);
-              const prose = txt.slice(0, startIdx).trim();
+            let cleanTxt = txt;
+            if (cleanTxt.includes("```json")) {
+              const parts = cleanTxt.split("```json");
+              let prose = parts[0].trim();
               if (prose) texts.push(prose);
-
-              const jsonStr = txt.slice(startIdx);
-              const parsed = JSON.parse(jsonStr);
-              a2ui.push(parsed);
+              
+              const jsonPart = parts[1].split("```")[0].trim();
+              const parsed = JSON.parse(jsonPart);
+              if (Array.isArray(parsed)) {
+                a2ui.push(...parsed);
+              } else {
+                a2ui.push(parsed);
+              }
               continue;
+            } else {
+              const firstChar = txt.match(/[\{\[]/);
+              if (firstChar) {
+                const startIdx = txt.indexOf(firstChar[0]);
+                const prose = txt.slice(0, startIdx).trim();
+                if (prose) texts.push(prose);
+
+                const jsonStr = txt.slice(startIdx);
+                const parsed = JSON.parse(jsonStr);
+                if (Array.isArray(parsed)) {
+                  a2ui.push(...parsed);
+                } else if (parsed && typeof parsed === "object") {
+                  if (parsed.kind === "data" && parsed.data) {
+                    a2ui.push(parsed.data);
+                  } else {
+                    a2ui.push(parsed);
+                  }
+                }
+                continue;
+              }
             }
           } catch (e) {
             console.warn("A2UI parse fallback:", e);
