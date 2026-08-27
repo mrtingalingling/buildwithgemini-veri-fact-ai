@@ -1492,6 +1492,35 @@ function buildNode(id, comps, seen) {
     case "Icon": {
       const s = el("span", "material-symbols-outlined"); s.textContent = iconName(boundStr(props.name) || props.name); return s;
     }
+    case "Table": {
+      const t = el("table", "a2table");
+      t.style.width = "100%";
+      t.style.borderCollapse = "collapse";
+      t.style.marginTop = "0.5rem";
+      t.style.marginBottom = "0.5rem";
+      t.style.fontSize = "0.82rem";
+      kids().forEach(n => t.appendChild(n));
+      return t;
+    }
+    case "TableRow": {
+      const tr = el("tr", "a2table-row");
+      tr.style.borderBottom = "1px solid var(--border)";
+      kids().forEach(n => tr.appendChild(n));
+      return tr;
+    }
+    case "TableCell": {
+      const td = el("td", "a2table-cell");
+      td.style.padding = "0.6rem 0.4rem";
+      td.style.color = "var(--text)";
+      td.style.verticalAlign = "top";
+      if (props.isHeader) {
+        td.style.fontWeight = "600";
+        td.style.color = "var(--accent)";
+        td.style.borderBottom = "2px solid var(--border-active)";
+      }
+      kids().forEach(n => td.appendChild(n));
+      return td;
+    }
     default:
       return null;
   }

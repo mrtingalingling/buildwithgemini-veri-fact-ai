@@ -458,6 +458,50 @@ function renderA2UI(container, a2uiPart) {
       icon.textContent = val.name || val;
       return icon;
     }
+    if (key === "table" || key === "Table") {
+      const t = document.createElement("table");
+      t.style.width = "100%";
+      t.style.borderCollapse = "collapse";
+      t.style.marginTop = "0.5rem";
+      t.style.marginBottom = "0.5rem";
+      t.style.fontSize = "0.82rem";
+      if (val.children) {
+        val.children.forEach(ch => {
+          const childNode = renderNode(ch);
+          if (childNode) t.appendChild(childNode);
+        });
+      }
+      return t;
+    }
+    if (key === "tableRow" || key === "TableRow") {
+      const tr = document.createElement("tr");
+      tr.style.borderBottom = "1px solid var(--border)";
+      if (val.children) {
+        val.children.forEach(ch => {
+          const childNode = renderNode(ch);
+          if (childNode) tr.appendChild(childNode);
+        });
+      }
+      return tr;
+    }
+    if (key === "tableCell" || key === "TableCell") {
+      const td = document.createElement("td");
+      td.style.padding = "0.6rem 0.4rem";
+      td.style.color = "var(--text)";
+      td.style.verticalAlign = "top";
+      if (val.isHeader) {
+        td.style.fontWeight = "600";
+        td.style.color = "var(--accent)";
+        td.style.borderBottom = "2px solid var(--border-active)";
+      }
+      if (val.children) {
+        val.children.forEach(ch => {
+          const childNode = renderNode(ch);
+          if (childNode) td.appendChild(childNode);
+        });
+      }
+      return td;
+    }
     return null;
   }
 
