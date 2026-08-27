@@ -53,7 +53,7 @@ DAILY_LIMIT = 15
 def _check_and_increment_rate_limit(user_id: str, has_byom_key: bool) -> tuple[bool, int]:
     """Returns (is_allowed, remaining_queries_count)"""
     if has_byom_key:
-        return True, 999  # Unlimited access with own API key
+        return True, 999  # Uncapped access with own API key
 
     today_str = datetime.date.today().isoformat()
     user_entry = _daily_usage.get(user_id, {"date": today_str, "count": 0})
@@ -240,7 +240,7 @@ async def chat(req: Request):
                 "kind": "text",
                 "text": "⚠️ **Daily Free Query Limit Reached (15/15)**\n\n"
                         "You have used your 15 free daily fact-check queries.\n\n"
-                        "🔑 **Bring Your Own AI Model (BYOM)**: Open **Remote AI Auth / BYOM Settings** (🔑) above to connect your own API Key (**OpenAI, Claude, Gemini, Grok, or OpenRouter**) for **UNLIMITED** queries!"
+                        "🔑 **Bring Your Own AI Model (BYOM)**: Open **Remote AI Auth / BYOM Settings** (🔑) above to connect your own API Key (**OpenAI, Claude, Gemini, Grok, or OpenRouter**) for queries **WITHOUT CAP**!"
             }]
         })
 

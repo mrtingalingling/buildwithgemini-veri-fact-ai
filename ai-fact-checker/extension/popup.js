@@ -564,7 +564,7 @@ async function sendChatMessage(msgText) {
     const badge = document.getElementById("queryCounterBadge");
     if (badge) {
       if (data.remaining === 999 || byomSettings.api_key) {
-        badge.textContent = "⚡ UNLIMITED (BYOM)";
+        badge.textContent = "⚡ UNCAPPED (BYOM)";
         badge.style.background = "rgba(131, 56, 236, 0.25)";
         badge.style.color = "#a855f7";
         badge.style.borderColor = "#8338ec";
@@ -762,10 +762,12 @@ if (btnAutoDetectAuth) {
     byomModal.classList.add("hidden");
 
     const b = bubble("agent");
-    b.textContent = "⚡ 1-Click Connected to Google AI Remote Auth! Unlimited queries unlocked via active Google Cloud session.";
+    b.textContent = "⚡ 1-Click Connected to Google AI Remote Auth! Queries without cap unlocked via active Google Cloud session.";
+    
+    // Update badge visually
     const badge = document.getElementById("queryCounterBadge");
     if (badge) {
-      badge.textContent = "⚡ UNLIMITED (GOOGLE AI)";
+      badge.textContent = "⚡ UNCAPPED (GOOGLE AI)";
       badge.style.background = "rgba(0, 245, 212, 0.2)";
       badge.style.color = "var(--accent)";
       badge.style.borderColor = "var(--accent-glow)";
@@ -823,10 +825,10 @@ if (btnSaveBYOM) {
 
     const b = bubble("agent");
     if (settings.api_key) {
-      b.textContent = `🔑 Remote Auth Connected! AI Provider set to [${settings.provider.toUpperCase()}]. You now have UNLIMITED queries!`;
+      b.textContent = `🔑 Remote Auth Connected! AI Provider set to [${settings.provider.toUpperCase()}]. You now have queries WITHOUT CAP!`;
       const badge = document.getElementById("queryCounterBadge");
       if (badge) {
-        badge.textContent = "⚡ UNLIMITED (BYOM)";
+        badge.textContent = "⚡ UNCAPPED (BYOM)";
         badge.style.background = "rgba(131, 56, 236, 0.25)";
         badge.style.color = "#a855f7";
         badge.style.borderColor = "#8338ec";

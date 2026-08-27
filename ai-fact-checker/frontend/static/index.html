@@ -982,7 +982,7 @@
       </button>
 
       <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-        Or select any AI provider below to bring your custom remote API key for <strong>UNLIMITED</strong> queries (OpenAI, Claude, Gemini, Grok).
+        Or select any AI provider below to bring your custom remote API key for queries <strong>WITHOUT CAP</strong> (OpenAI, Claude, Gemini, Grok).
       </p>
 
       <div style="display: flex; flex-direction: column; gap: 0.6rem;">
@@ -1034,7 +1034,7 @@
         <button id="btnBYOM" class="btn-theme" title="Bring Your Own AI Model / Remote Auth Settings" style="margin-left: 0.4rem; background: rgba(131, 56, 236, 0.2); border-color: #8338ec; color: #a855f7;">
           <span class="material-symbols-outlined" style="font-size: 1rem;">key</span>
         </button>
-        <span id="queryCounterBadge" style="margin-left: 0.4rem; font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 20px; background: rgba(0, 245, 212, 0.12); color: var(--accent); border: 1px solid var(--accent-glow);" title="15 free queries per user per day. Bring your own key for unlimited access!">15/15 Left</span>
+        <span id="queryCounterBadge" style="margin-left: 0.4rem; font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 20px; background: rgba(0, 245, 212, 0.12); color: var(--accent); border: 1px solid var(--accent-glow);" title="15 free queries per user per day. Bring your own key for access without cap!">15/15 Left</span>
       </div>
       <div id="permissionToggle" class="permission-status">
         <div class="status-dot"></div>
@@ -1664,7 +1664,7 @@ async function sendChatMessage(text) {
     const badge = document.getElementById("queryCounterBadge");
     if (badge) {
       if (data.remaining === 999 || byomSettings.api_key) {
-        badge.textContent = "⚡ UNLIMITED (BYOM)";
+        badge.textContent = "⚡ UNCAPPED (BYOM)";
         badge.style.background = "rgba(131, 56, 236, 0.25)";
         badge.style.color = "#a855f7";
         badge.style.borderColor = "#8338ec";
@@ -1966,10 +1966,10 @@ if (btnAutoDetectAuth) {
     byomModal.classList.add("hidden");
 
     const b = bubble("agent");
-    b.textContent = "⚡ 1-Click Connected to Google AI Remote Auth! Unlimited queries unlocked via active Google Cloud session.";
+    b.textContent = "⚡ 1-Click Connected to Google AI Remote Auth! Queries without cap unlocked via active Google Cloud session.";
     const badge = document.getElementById("queryCounterBadge");
     if (badge) {
-      badge.textContent = "⚡ UNLIMITED (GOOGLE AI)";
+      badge.textContent = "⚡ UNCAPPED (GOOGLE AI)";
       badge.style.background = "rgba(0, 245, 212, 0.2)";
       badge.style.color = "var(--accent)";
       badge.style.borderColor = "var(--accent-glow)";
@@ -2027,10 +2027,10 @@ if (btnSaveBYOM) {
 
     const b = bubble("agent");
     if (settings.api_key) {
-      b.textContent = `🔑 Remote Auth Connected! AI Provider set to [${settings.provider.toUpperCase()}]. You now have UNLIMITED queries!`;
+      b.textContent = `🔑 Remote Auth Connected! AI Provider set to [${settings.provider.toUpperCase()}]. You now have queries WITHOUT CAP!`;
       const badge = document.getElementById("queryCounterBadge");
       if (badge) {
-        badge.textContent = "⚡ UNLIMITED (BYOM)";
+        badge.textContent = "⚡ UNCAPPED (BYOM)";
         badge.style.background = "rgba(131, 56, 236, 0.25)";
         badge.style.color = "#a855f7";
         badge.style.borderColor = "#8338ec";
