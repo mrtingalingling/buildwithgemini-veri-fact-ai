@@ -85,10 +85,9 @@ instruction = schema_manager.generate_system_prompt(
         "11. CRITICAL: Whenever you return results from any tool call (including get_fact_checks, consult_fact_rag_corpus, check_source_credibility, or code execution), you MUST NEVER output raw JSON, dictionaries, or curly braces. You MUST parse and explain the results in a friendly, conversational, human-readable format first, followed by the structured A2UI JSON array."
     ),
     ui_description=(
-        "Keep every surface tiny and flat: ONE Card > ONE Column > a few Text rows. "
-        "Never nest a Card inside a Card. "
-        "Use ONLY these components: Card, Column, Row, Text, Table, and Image. "
+        "Use ONLY these components: Card, Column, Row, Text, Table, TableRow, TableCell, and Image. "
         "Do not use Heading (unsupported), or Buttons, actions, or forms (they do nothing in adk web). "
+        "When rendering lists of data (like fact-checks), ALWAYS use the Table component instead of Cards or Rows. "
         "You may include one Image component, but only when you have a public https "
         "URL for the image (for example the URL an image tool returns after uploading "
         "to a public bucket). Set the Image url to that exact https link, for example "
