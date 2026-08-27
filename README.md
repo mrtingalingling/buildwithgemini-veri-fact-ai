@@ -1,194 +1,112 @@
+# 🛡️ VeriFact AI · AI Fact-Checker & Hallucination Detector
+
+> A premium, conversational AI assistant designed to verify claims, evaluate source credibility, and calculate hallucination likelihoods using Google Cloud's most advanced reasoning engines.
+
 <div align="center">
-
-<img src="assets/build-with-gemini-banner.png" alt="Build with Gemini" width="100%" />
-
-# 🚀 Build with Gemini · Track 3
-
-### The starter kit for Track 3 of the Build with Gemini World Tour, and a showcase of what participants built with it.
-
-Clone this repo, open [Antigravity](https://antigravity.google), and build your own agent-first app on Google Cloud. Every project in the [gallery below](#-featured-projects) was built the same way: prototyped with Antigravity and `agents-cli`, equipped with Memory, tools, storage, and RAG, deployed to Agent Platform, and given a face on Cloud Run.
-
-<br/>
-
-![Build with Gemini](https://img.shields.io/badge/Build%20with%20Gemini-World%20Tour-4285F4?logo=google&logoColor=white)
-![Track 3](https://img.shields.io/badge/Track%203-Agent--First%20Apps-EA4335)
-![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Agent%20Platform-4285F4?logo=googlecloud&logoColor=white)
-![Built with ADK](https://img.shields.io/badge/Built%20with-ADK%20%2B%20agents--cli-34A853)
-![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)
-![Projects](https://img.shields.io/badge/Projects-0-blue)
-
-<sub>📖 <a href="https://cszhu.github.io/build-with-gemini/">Lab Guide</a> · 🛠️ <a href="https://google.github.io/agents-cli/guide/getting-started/">agents-cli</a> · 🤖 <a href="https://google.github.io/adk-docs/">ADK</a></sub>
-
+  <img src="./demo.gif" alt="VeriFact AI Chrome Extension Demo" width="375" style="border-radius: 12px; box-shadow: 0 8px 30px rgba(0, 245, 212, 0.2); border: 2px solid #00f5d4;" />
+  <p><i>VeriFact AI running inside a high-fidelity Chrome Extension Popup simulator, with ticking permission timers, active tab scanning, and dynamic Firestore catalog retrieval.</i></p>
 </div>
 
 ---
 
-## 📚 Table of Contents
+## 📖 Project Overview
 
-- [🧩 Anatomy of a Track 3 Project](#-anatomy-of-a-track-3-project)
-- [🏷️ Capability Legend](#️-capability-legend)
-- [📂 Featured Projects](#-featured-projects)
-  - [🛍️ Commerce & Marketplace Agents](#️-commerce--marketplace-agents)
-  - [🍳 Food & Recipe Agents](#-food--recipe-agents)
-  - [✈️ Travel & Local Agents](#️-travel--local-agents)
-  - [💪 Health, Fitness & Wellness Agents](#-health-fitness--wellness-agents)
-  - [📚 Learning & Knowledge Agents](#-learning--knowledge-agents)
-  - [🎨 Creative & Media Agents](#-creative--media-agents)
-  - [🏢 Productivity & Enterprise Agents](#-productivity--enterprise-agents)
-  - [🧪 Experimental & Other](#-experimental--other)
-- [🧠 What's in this Repo](#-whats-in-this-repo)
-- [🧰 Build Your Own](#-build-your-own)
-- [📚 Resources](#-resources)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
+**VeriFact AI** helps users debunk claims, analyze browser tab content, and calculate precise **Hallucination Likelihood Percentages** on demand. Grounded on verified documents and empowered by statistical weights processed in a secure sandbox, it translates complex web findings into clean visual diagnostics and automatically indexes results in a global truth catalog.
 
 ---
 
-## 🧩 Anatomy of a Track 3 Project
+## 🌟 Key Features
 
-Every app in this collection is built from the same set of Google Cloud building blocks introduced in the lab. Once you understand this shape, you can read any project here at a glance:
+* **Real-time Active Tab Scanning**: Read page context dynamically from mock tabs (Wikipedia, Scientific American, etc.) under an interactive, ticking countdown permission window.
+* **Algorithmic Hallucination Scoring**: Safely runs advanced heuristic scoring scripts in a secure Python sandbox to weigh source conflicts and compute factual likelihoods.
+* **Community Fact Pool & Firestore History**: Commits verified claims, verdicts, and cited URLs to a global Firestore database, allowing users to query history instantly.
+* **Google Omni Video Explanations**: Generates cinematic, educational visual summaries debunking or explaining fact-checks using Google's `gemini-omni-flash-preview` model.
+* **Branded Dialogue Chat Interface**: Glassmorphic neon-mint UI with dedicated secure shield avatar rows and custom text response containers.
+* **Interactive Prompt Quick-Starts**: One-click pills directly above the input box (Mars 2024 landing, Flat Earth catalog, Firestore list retrieval) for immediate testing.
 
-| Layer | What it does | Powered by |
+---
+
+## 🧠 Google Cloud Architecture & Tools
+
+Every capability in **VeriFact AI** is backed by an enterprise Google Cloud service:
+
+| Google Cloud Component | Role in VeriFact AI | Powered By |
 |---|---|---|
-| 🤖 **The Agent** | The core reasoning loop | [ADK](https://google.github.io/adk-docs/) + [`agents-cli`](https://google.github.io/agents-cli/guide/getting-started/), scaffolded with [Antigravity](https://antigravity.google) |
-| 🧠 **Memory** | Remembers facts across sessions | [Agent Platform Memory Bank](https://docs.cloud.google.com/gemini-enterprise-agent-platform/scale/memory-bank) |
-| 🗄️ **Structured data** | Inventory, records, lists | [Firestore](https://console.cloud.google.com/firestore) |
-| 🖼️ **Files & blobs** | Images, media, assets | [Cloud Storage](https://console.cloud.google.com/storage) |
-| 🔧 **Tools** | Take real actions and fetch real data | ADK function tools |
-| 📖 **RAG** | Answers grounded in your documents | [Vertex AI RAG Engine](https://console.cloud.google.com/agent-platform/rag) |
-| 🎨 **Media generation** | Creates images (and video) on demand | `gemini-3.1-flash-lite-image` (Nano Banana 2 Lite) · Omni (video) |
-| 🧪 **Code sandbox** | Safely runs generated code | Agent Platform code execution |
-| 🪟 **Agent-first UI** | Cards and tables instead of plain text | [A2UI](https://adk.dev/integrations/a2ui/) |
-| 🌐 **Frontend** | A shareable web face | FastAPI proxy on [Cloud Run](https://cloud.google.com/run) |
+| 🤖 **Reasoning Core** | Conversational reasoning & card schema output | **Gemini 2.5 Flash** |
+| 🎬 **Omni Media Gen** | Direct, serverless video explanation generation | **gemini-omni-flash-preview** (Global) |
+| 🗄️ **Structured Data** | Persisting and listing the global truth catalog | **Cloud Firestore** |
+| 🖼️ **Media Registry** | Hosting generated video bytes under public HTTPS endpoints | **Cloud Storage (GCS)** |
+| 📖 **Grounded RAG** | Indexing guidelines and verified truth documents | **Vertex AI RAG Engine** |
+| 🧪 **Secure Sandbox** | Safely compiling source credibility heuristic calculations | **Agent Engine Code Executor** |
+| 🧠 **Persistent Context** | Retaining active scenarios and preferences across sessions | **Vertex AI Memory Bank** |
+| 🪟 **Agent-First UI** | Rendering structured interactive detail cards | **A2UI Schema Manager (v0.8)** |
+| 🌐 **A2A Proxy Gateway** | Orchestrating browser client-to-agent reasoning passes | **FastAPI + Cloud Run** |
 
 ---
 
-## 🏷️ Capability Legend
-
-Each project below is tagged with the building blocks it uses, so you can find exactly the pattern you want to learn:
-
-`🧠 Memory` · `🗄️ Firestore` · `🖼️ Storage` · `🔧 Tools` · `📖 RAG` · `🎨 Image Gen` · `🎬 Video` · `🧪 Sandbox` · `🪟 A2UI` · `🌐 Cloud Run`
-
----
-
-## 📂 Featured Projects
-
-A showcase of what workshop participants built with this lab. Entries are added here from the swag and gallery submission form after each event, so the categories below start empty and fill in over time. Browse them for inspiration, or [submit your own](#-contributing) once you've published your project with the `publish-to-github` skill.
-
-<!--
-Add one entry per project, in this format:
-- 🌿 **[Project Name](https://github.com/their-handle/their-repo)**: one-line description of what it does. <br/> <sub>`🗄️ Firestore` · `🎨 Image Gen` · `🪟 A2UI`, by [@handle](https://github.com/handle)</sub>
-
-Pick tags from the Capability Legend above. Bump the "Projects" badge count at the top when you add one.
--->
-
-### 🛍️ Commerce & Marketplace Agents
-
-### 🍳 Food & Recipe Agents
-
-### ✈️ Travel & Local Agents
-
-### 💪 Health, Fitness & Wellness Agents
-
-### 📚 Learning & Knowledge Agents
-
-### 🎨 Creative & Media Agents
-
-### 🏢 Productivity & Enterprise Agents
-
-### 🧪 Experimental & Other
-
----
-
-## 🧠 What's in this Repo
-
-The `.agents/` folder teaches Antigravity how to build agents on Google Cloud.
-
-### Skills
-
-A **skill** is a bundle of instructions that loads automatically when it's relevant, so the agent gets the workflow right in fewer steps instead of rediscovering it each time.
-
-| Skill | What it does |
-| --- | --- |
-| [`pick-your-agent-project`](.agents/skills/pick-your-agent-project/SKILL.md) | Brainstorm your app idea and write a project brief |
-| [`troubleshoot-lab-setup`](.agents/skills/troubleshoot-lab-setup/SKILL.md) | Verify your environment and fix common setup errors |
-| [`memory-bank-setup`](.agents/skills/setup-memory-bank/SKILL.md) | Add cross-session memory to your agent with Vertex AI Memory Bank |
-| [`rag-engine-setup`](.agents/skills/build-rag/SKILL.md) | Ground your agent on documents with a serverless Vertex AI RAG corpus |
-| [`enable-a2ui`](.agents/skills/enable-a2ui/SKILL.md) | Make your agent reply with rich UI cards (A2UI) in the ADK dev UI |
-| [`build-agent-frontend`](.agents/skills/build-agent-frontend/SKILL.md) | Generate a FastAPI chat frontend and ship it to Cloud Run |
-| [`record-demo`](.agents/skills/record-demo/SKILL.md) | Record a branded demo video of your agent, with an optional AI soundtrack |
-| [`publish-to-github`](.agents/skills/publish-to-github/SKILL.md) | Publish your finished project to your own GitHub and submit it for swag |
-
-### Pre-configured tools (MCP)
-
-[`.agents/mcp_config.json`](.agents/mcp_config.json) wires up two [Model Context Protocol](https://modelcontextprotocol.io/) servers that authenticate with your gcloud credentials, so the agent can look things up instead of guessing:
-
-- **Firebase**: work directly with Firestore and other Firebase services
-- **Google Developer Knowledge**: grounded access to Google's official docs (Cloud, Firebase, ADK, Agent Platform)
-
-### Layout
+## 📁 Repository Directory Structure
 
 ```text
-.agents/
-├── mcp_config.json    # Firebase + Developer Knowledge MCP servers
-└── skills/            # the workshop skills listed above
+ai-fact-checker/
+├── app/                      # Main Agent Package
+│   ├── agent.py              # Main Agent logic, Prompt & Tool registry
+│   ├── a2ui_utils.py         # A2UI card renderer after_model_callback
+│   ├── app_utils/            # Modular Helper Tools
+│   │   ├── firestore_db.py   # Firestore read/write collection services
+│   │   ├── rag_tool.py       # Vertex AI RAG Engine Retrieval
+│   │   ├── global_memory.py  # Active session Memory Bank callback filters
+│   │   └── video_generator.py# Google Omni Video Generator & GCS Uploader
+├── frontend/                 # Chat Frontend & A2A Proxy
+│   ├── main.py               # FastAPI A2A client proxy
+│   └── static/               # Rebranded Neon Glassmorphic UI 
+│       └── index.html        # High-fidelity Chrome Extension Popup
+├── tests/                    # Unit & Integration Tests suite
+├── pyproject.toml            # Astral uv package config
+└── demo.gif                  # Snappy looping demo video
 ```
 
 ---
 
-## 🧰 Build Your Own
+## 🚀 Getting Started Locally
 
-The full, step-by-step walkthrough lives on the **[lab guide](https://cszhu.github.io/build-with-gemini/)**. This is the short version.
-
-**Prerequisites** (the lab workstation comes with all of this pre-installed; you'll need it if you're running on your own machine):
-
-- A **Google Cloud project** with billing enabled
-- **[Antigravity](https://antigravity.google)** (`agy`), the coding agent that loads the skills above
-- **[agents-cli](https://google.github.io/agents-cli/guide/getting-started/)**, built on the [Agent Development Kit (ADK)](https://google.github.io/adk-docs/)
-- Authenticated gcloud: `gcloud auth login` and `gcloud auth application-default login`
-- A personal **GitHub account** for the final publish-and-submit step
-
-**Quickstart:**
-
+### 1. Install Dependencies
+Ensure you have Astral [uv](https://docs.astral.sh/uv/) and the `google-agents-cli` installed. Then run:
 ```bash
-git clone https://github.com/cszhu/build-with-gemini
-cd build-with-gemini
-agy
+agents-cli install
 ```
 
-On startup, Antigravity scans the `.agents/` folder and loads the skills and tools above automatically. In the AGY prompt:
-
-```text
-/skills            # see the installed skills
-/mcp               # confirm the firebase + google-developer-knowledge tools are connected
+### 2. Set Up Environment Variables
+Create a `.env` in the root (matching `.env.example`) or run:
+```bash
+export AGENT_ENGINE_RESOURCE_NAME="projects/419816504777/locations/us-east1/reasoningEngines/6326484353106837504"
+export AGENT_DIRECTORY="app"
 ```
 
-```text
-Verify my setup.   # runs the troubleshoot-lab-setup skill to check your environment
+### 3. Run the FastAPI Local Server
+Start your proxy and WebUI on port `8080`:
+```bash
+cd frontend
+uv run python main.py
 ```
-
-Then follow the [lab guide](https://cszhu.github.io/build-with-gemini/) to design, build, deploy, and share your agent, start to finish.
+Open **`http://localhost:8080/`** in your browser to experience **VeriFact AI**!
 
 ---
 
-## 📚 Resources
+## 🧩 Loading as a Real Chrome Extension (Manifest V3)
 
-- **[Lab guide](https://cszhu.github.io/build-with-gemini/)**: the step-by-step workshop
-- [Antigravity](https://antigravity.google)
-- [agents-cli](https://google.github.io/agents-cli/guide/getting-started/)
-- [Agent Development Kit (ADK)](https://google.github.io/adk-docs/)
-- [Gemini Enterprise Agent Platform](https://docs.cloud.google.com/gemini-enterprise-agent-platform)
+You can load **VeriFact AI** directly into Google Chrome, Brave, or Microsoft Edge as an active Manifest V3 browser extension!
 
----
-
-## 🤝 Contributing
-
-**Built something?** Publish it with the `publish-to-github` skill and submit it through the form it gives you. Submissions get you swag, and standout projects get added to the [Featured Projects](#-featured-projects) gallery above.
-
-**Found a bug?** If you hit a rough edge in a skill or the lab, please [open an issue](https://github.com/cszhu/build-with-gemini/issues).
+1. Open your browser and navigate to **`chrome://extensions/`**.
+2. Enable **Developer mode** using the toggle switch in the top-right corner.
+3. Click the **"Load unpacked"** button in the top-left toolbar.
+4. Select the **`extension/`** folder located inside this repository (`ai-fact-checker/extension`).
+5. Click on the **VeriFact AI** extension icon in your Chrome toolbar to open the popup cockpit!
+6. Click **"Scan Page"** on any live webpage to extract page text and verify claims in real-time.
 
 ---
 
-## 📄 License
-
-This is not an officially supported Google product and is provided for the Build with Gemini workshop for demonstration purposes only.
+### 4. Run Automated Quality Checks
+Confirm full compilation stability by running unit and integration tests:
+```bash
+uv run pytest
+```
