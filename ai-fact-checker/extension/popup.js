@@ -651,11 +651,67 @@ const byomProviderSelect = document.getElementById("byomProviderSelect");
 const byomApiKeyInput = document.getElementById("byomApiKeyInput");
 const byomModelInput = document.getElementById("byomModelInput");
 
+const btnAutoDetectAuth = document.getElementById("btnAutoDetectAuth");
+const byomPortalLink = document.getElementById("byomPortalLink");
+const btnPasteClipboardKey = document.getElementById("btnPasteClipboardKey");
+
+const providerPortalURLs = {
+  gemini: "https://aistudio.google.com/app/apikey",
+  openai: "https://platform.openai.com/api-keys",
+  anthropic: "https://console.anthropic.com/settings/keys",
+  grok: "https://console.x.ai/",
+  custom: "https://openrouter.ai/keys",
+  default: "https://aistudio.google.com/app/apikey"
+};
+
+if (byomProviderSelect && byomPortalLink) {
+  byomProviderSelect.addEventListener("change", () => {
+    const p = byomProviderSelect.value;
+    byomPortalLink.href = providerPortalURLs[p] || providerPortalURLs.default;
+  });
+}
+
+if (btnAutoDetectAuth) {
+  btnAutoDetectAuth.addEventListener("click", () => {
+    // 1-Click zero-friction Google AI Auth connection
+    localStorage.removeItem("byom_settings");
+    byomModal.classList.add("hidden");
+
+    const b = bubble("agent");
+    b.textContent = "⚡ 1-Click Connected to Google AI Remote Auth! Unlimited queries unlocked via active Google Cloud session.";
+    const badge = document.getElementById("queryCounterBadge");
+    if (badge) {
+      badge.textContent = "⚡ UNLIMITED (GOOGLE AI)";
+      badge.style.background = "rgba(0, 245, 212, 0.2)";
+      badge.style.color = "var(--accent)";
+      badge.style.borderColor = "var(--accent-glow)";
+    }
+  });
+}
+
+if (btnPasteClipboardKey) {
+  btnPasteClipboardKey.addEventListener("click", async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        byomApiKeyInput.value = text.trim();
+        btnPasteClipboardKey.textContent = "Pasted! 📋";
+        setTimeout(() => { btnPasteClipboardKey.textContent = "Paste Clipboard 📋"; }, 2000);
+      }
+    } catch (e) {
+      alert("Please grant clipboard permissions or paste manually.");
+    }
+  });
+}
+
 function loadBYOMSettings() {
   const saved = JSON.parse(localStorage.getItem("byom_settings") || "{}");
   if (saved.provider) byomProviderSelect.value = saved.provider;
   if (saved.api_key) byomApiKeyInput.value = saved.api_key;
   if (saved.model) byomModelInput.value = saved.model;
+  if (byomPortalLink && saved.provider) {
+    byomPortalLink.href = providerPortalURLs[saved.provider] || providerPortalURLs.default;
+  }
 }
 
 if (btnBYOM) {

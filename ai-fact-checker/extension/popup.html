@@ -482,39 +482,55 @@
 
   <!-- BYOM Remote Auth Modal -->
   <div id="byomModal" class="permission-overlay hidden">
-    <div class="permission-modal" style="padding: 1rem; text-align: left; max-width: 320px;">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem;">
+    <div class="permission-modal" style="padding: 0.85rem; text-align: left; max-width: 330px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem;">
         <div style="display: flex; align-items: center; gap: 0.4rem;">
           <span class="material-symbols-outlined" style="color: #a855f7; font-size: 1.1rem;">key</span>
-          <h3 style="font-size: 0.85rem; color: var(--text); margin: 0;">Bring Your Own AI Model</h3>
+          <h3 style="font-size: 0.85rem; color: var(--text); margin: 0;">Bring Your Own AI Model (BYOM)</h3>
         </div>
         <button id="btnCloseBYOM" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><span class="material-symbols-outlined" style="font-size: 1rem;">close</span></button>
       </div>
 
-      <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.6rem;">
-        Connect your custom remote API key to unlock <strong>UNLIMITED</strong> queries & multi-model support (OpenAI, Claude, Gemini, Grok).
+      <!-- 1-Click Zero Friction Remote Auth Banner -->
+      <button id="btnAutoDetectAuth" style="width: 100%; padding: 0.45rem; background: linear-gradient(135deg, rgba(0, 245, 212, 0.2), rgba(131, 56, 236, 0.25)); border: 1px solid var(--accent); border-radius: 6px; color: var(--accent); font-weight: 600; font-size: 0.72rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.3rem; margin-bottom: 0.6rem; transition: all 0.2s ease;">
+        <span class="material-symbols-outlined" style="font-size: 0.85rem;">bolt</span>
+        1-Click Auto-Connect Google AI Auth (Zero Friction)
+      </button>
+
+      <p style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+        Or select any AI provider below to bring your key for <strong>UNLIMITED</strong> queries (OpenAI, Claude, Gemini, Grok).
       </p>
 
-      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-        <label style="font-size: 0.7rem; font-weight: 600; color: var(--text);">AI Provider</label>
-        <select id="byomProviderSelect" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem; color: var(--text); font-size: 0.75rem; outline: none;">
+      <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <label style="font-size: 0.68rem; font-weight: 600; color: var(--text);">AI Provider</label>
+          <a id="byomPortalLink" href="https://aistudio.google.com/app/apikey" target="_blank" style="font-size: 0.65rem; color: #00f5d4; text-decoration: underline; font-weight: 500;">
+            1-Click Get Key ↗
+          </a>
+        </div>
+        <select id="byomProviderSelect" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 0.35rem; color: var(--text); font-size: 0.72rem; outline: none;">
           <option value="default">Default (Google Vertex AI)</option>
+          <option value="gemini">Google Gemini (Gemini 2.5 Flash / Pro)</option>
           <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
           <option value="anthropic">Anthropic (Claude 3.5 Sonnet)</option>
-          <option value="gemini">Google Gemini (2.5 Flash / Pro)</option>
           <option value="grok">xAI Grok (Grok-2)</option>
           <option value="custom">Custom / OpenRouter</option>
         </select>
 
-        <label style="font-size: 0.7rem; font-weight: 600; color: var(--text);">Remote API Key</label>
-        <input type="password" id="byomApiKeyInput" placeholder="sk-..., AIza..., xai-..." style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem; color: var(--text); font-size: 0.75rem; outline: none;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <label style="font-size: 0.68rem; font-weight: 600; color: var(--text);">Remote API Key</label>
+          <button id="btnPasteClipboardKey" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 4px; padding: 0.1rem 0.35rem; color: var(--text-muted); font-size: 0.65rem; cursor: pointer;">
+            Paste Clipboard 📋
+          </button>
+        </div>
+        <input type="password" id="byomApiKeyInput" placeholder="sk-..., AIza..., xai-..." style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 0.35rem; color: var(--text); font-size: 0.72rem; outline: none;">
 
-        <label style="font-size: 0.7rem; font-weight: 600; color: var(--text);">Model Name (Optional)</label>
-        <input type="text" id="byomModelInput" placeholder="e.g. gpt-4o-mini, claude-3-5-sonnet-20241022" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem; color: var(--text); font-size: 0.75rem; outline: none;">
+        <label style="font-size: 0.68rem; font-weight: 600; color: var(--text);">Model Name (Optional)</label>
+        <input type="text" id="byomModelInput" placeholder="e.g. gpt-4o-mini, claude-3-5-sonnet-20241022" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 0.35rem; color: var(--text); font-size: 0.72rem; outline: none;">
 
-        <div style="display: flex; gap: 0.4rem; margin-top: 0.4rem;">
-          <button id="btnSaveBYOM" class="btn-grant" style="flex: 1; background: linear-gradient(135deg, #8338ec, #3a86c8); border: none; padding: 0.4rem; font-size: 0.75rem; cursor: pointer;">Save Key</button>
-          <button id="btnClearBYOM" class="btn-deny" style="flex: 0.7; padding: 0.4rem; font-size: 0.75rem; cursor: pointer;">Clear</button>
+        <div style="display: flex; gap: 0.4rem; margin-top: 0.3rem;">
+          <button id="btnSaveBYOM" class="btn-grant" style="flex: 1; background: linear-gradient(135deg, #8338ec, #3a86c8); border: none; padding: 0.35rem; font-size: 0.72rem; cursor: pointer;">Save Key</button>
+          <button id="btnClearBYOM" class="btn-deny" style="flex: 0.7; padding: 0.35rem; font-size: 0.72rem; cursor: pointer;">Clear</button>
         </div>
       </div>
     </div>

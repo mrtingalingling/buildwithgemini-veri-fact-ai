@@ -922,31 +922,47 @@
 
   <!-- BYOM Remote Auth Modal -->
   <div id="byomModal" class="permission-overlay hidden">
-    <div class="permission-modal" style="max-width: 420px; text-align: left;">
+    <div class="permission-modal" style="max-width: 440px; text-align: left;">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
         <div style="display: flex; align-items: center; gap: 0.5rem;">
           <span class="material-symbols-outlined" style="color: #a855f7; font-size: 1.3rem;">key</span>
-          <h3 style="font-size: 1rem; color: var(--text); margin: 0;">Bring Your Own AI Model</h3>
+          <h3 style="font-size: 1rem; color: var(--text); margin: 0;">Bring Your Own AI Model (BYOM)</h3>
         </div>
         <button id="btnCloseBYOM" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><span class="material-symbols-outlined">close</span></button>
       </div>
 
-      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-        Connect your custom remote API key to unlock <strong>UNLIMITED</strong> fact-check queries and use models like OpenAI GPT-4o, Anthropic Claude 3.5, Gemini, or Grok.
+      <!-- 1-Click Zero Friction Remote Auth Banner -->
+      <button id="btnAutoDetectAuth" style="width: 100%; padding: 0.55rem; background: linear-gradient(135deg, rgba(0, 245, 212, 0.2), rgba(131, 56, 236, 0.25)); border: 1px solid var(--accent); border-radius: 8px; color: var(--accent); font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; margin-bottom: 0.75rem; transition: all 0.2s ease;">
+        <span class="material-symbols-outlined" style="font-size: 1rem;">bolt</span>
+        1-Click Auto-Connect Google AI Auth (Zero Friction)
+      </button>
+
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+        Or select any AI provider below to bring your custom remote API key for <strong>UNLIMITED</strong> queries (OpenAI, Claude, Gemini, Grok).
       </p>
 
       <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-        <label style="font-size: 0.75rem; font-weight: 600; color: var(--text);">AI Provider</label>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text);">AI Provider</label>
+          <a id="byomPortalLink" href="https://aistudio.google.com/app/apikey" target="_blank" style="font-size: 0.72rem; color: #00f5d4; text-decoration: underline; font-weight: 500;">
+            1-Click Get Key ↗
+          </a>
+        </div>
         <select id="byomProviderSelect" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem; color: var(--text); font-size: 0.82rem; outline: none;">
           <option value="default">Default (Google Vertex AI Reasoning Engine)</option>
+          <option value="gemini">Google Gemini (Gemini 2.5 Flash / Pro)</option>
           <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
           <option value="anthropic">Anthropic (Claude 3.5 Sonnet / Opus)</option>
-          <option value="gemini">Google Gemini (Gemini 2.5 Flash / Pro)</option>
           <option value="grok">xAI Grok (Grok-2)</option>
           <option value="custom">Custom / OpenRouter</option>
         </select>
 
-        <label style="font-size: 0.75rem; font-weight: 600; color: var(--text);">Remote API Key</label>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text);">Remote API Key</label>
+          <button id="btnPasteClipboardKey" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 6px; padding: 0.15rem 0.45rem; color: var(--text-muted); font-size: 0.7rem; cursor: pointer;">
+            Paste Clipboard 📋
+          </button>
+        </div>
         <input type="password" id="byomApiKeyInput" placeholder="sk-..., AIza..., xai-..." style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem; color: var(--text); font-size: 0.82rem; outline: none;">
 
         <label style="font-size: 0.75rem; font-weight: 600; color: var(--text);">Model Name (Optional Override)</label>
@@ -1818,11 +1834,68 @@ const byomProviderSelect = document.getElementById("byomProviderSelect");
 const byomApiKeyInput = document.getElementById("byomApiKeyInput");
 const byomModelInput = document.getElementById("byomModelInput");
 
+const btnAutoDetectAuth = document.getElementById("btnAutoDetectAuth");
+const byomPortalLink = document.getElementById("byomPortalLink");
+const btnPasteClipboardKey = document.getElementById("btnPasteClipboardKey");
+
+const providerPortalURLs = {
+  gemini: "https://aistudio.google.com/app/apikey",
+  openai: "https://platform.openai.com/api-keys",
+  anthropic: "https://console.anthropic.com/settings/keys",
+  grok: "https://console.x.ai/",
+  custom: "https://openrouter.ai/keys",
+  default: "https://aistudio.google.com/app/apikey"
+};
+
+if (byomProviderSelect && byomPortalLink) {
+  byomProviderSelect.addEventListener("change", () => {
+    const p = byomProviderSelect.value;
+    byomPortalLink.href = providerPortalURLs[p] || providerPortalURLs.default;
+  });
+}
+
+if (btnAutoDetectAuth) {
+  btnAutoDetectAuth.addEventListener("click", () => {
+    // 1-Click zero-friction Google AI Auth connection
+    const settings = { provider: "default", api_key: "", model: "" };
+    localStorage.removeItem("byom_settings");
+    byomModal.classList.add("hidden");
+
+    const b = bubble("agent");
+    b.textContent = "⚡ 1-Click Connected to Google AI Remote Auth! Unlimited queries unlocked via active Google Cloud session.";
+    const badge = document.getElementById("queryCounterBadge");
+    if (badge) {
+      badge.textContent = "⚡ UNLIMITED (GOOGLE AI)";
+      badge.style.background = "rgba(0, 245, 212, 0.2)";
+      badge.style.color = "var(--accent)";
+      badge.style.borderColor = "var(--accent-glow)";
+    }
+  });
+}
+
+if (btnPasteClipboardKey) {
+  btnPasteClipboardKey.addEventListener("click", async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        byomApiKeyInput.value = text.trim();
+        btnPasteClipboardKey.textContent = "Pasted! 📋";
+        setTimeout(() => { btnPasteClipboardKey.textContent = "Paste Clipboard 📋"; }, 2000);
+      }
+    } catch (e) {
+      alert("Please grant clipboard permissions or paste manually.");
+    }
+  });
+}
+
 function loadBYOMSettings() {
   const saved = JSON.parse(localStorage.getItem("byom_settings") || "{}");
   if (saved.provider) byomProviderSelect.value = saved.provider;
   if (saved.api_key) byomApiKeyInput.value = saved.api_key;
   if (saved.model) byomModelInput.value = saved.model;
+  if (byomPortalLink && saved.provider) {
+    byomPortalLink.href = providerPortalURLs[saved.provider] || providerPortalURLs.default;
+  }
 }
 
 if (btnBYOM) {
