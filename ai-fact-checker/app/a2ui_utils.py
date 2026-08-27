@@ -220,11 +220,18 @@ def _surface_is_renderable(messages: list[dict]) -> bool:
 def _extract_prose_and_json(text: str) -> tuple[str, str]:
     """Split the text into conversational prose (if any) and the raw JSON block."""
     first_idx = -1
-    for char in ('[', '{'):
-        idx = text.find(char)
+    for tag in ('<a2ui-json>', '<a2a_datapart_json>'):
+        idx = text.find(tag)
         if idx != -1:
             if first_idx == -1 or idx < first_idx:
                 first_idx = idx
+                
+    if first_idx == -1:
+        for char in ('[', '{'):
+            idx = text.find(char)
+            if idx != -1:
+                if first_idx == -1 or idx < first_idx:
+                    first_idx = idx
                 
     if first_idx == -1:
         return text, ""
