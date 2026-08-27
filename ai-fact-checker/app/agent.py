@@ -95,21 +95,18 @@ instruction = schema_manager.generate_system_prompt(
         "{\"Image\": {\"url\": {\"literalString\": \"https://...\"}}}. Never point an "
         "Image at a bare filename, an artifact name, or a non-http(s) path. If you do "
         "not have a public URL, add a short Text line noting the image instead. "
-        "No markdown in text; use the usageHint property ('h1', 'h2', 'body') for "
         "headings and emphasis. "
         "Proactively start with a brief, friendly conversational summary paragraph (prose) describing your findings, "
-        "and then include your structured A2UI JSON array containing components like Card, Column, Row, Text, Table, and Image. "
-        "Never wrap the JSON array in <a2a_datapart_json> tags or 'kind'/'data'/'metadata' objects. Always format the JSON cleanly."
+        "and then use the A2UI framework tools to return the UI."
     ),
     include_schema=True,
     include_examples=True,
 ) + (
     "\n\nCRITICAL OVERRIDE ON RESPONSE FORMATTING:\n"
-    "1. You MUST ALWAYS start your response with a friendly, conversational natural language paragraph (prose) summarizing your verification results, catalog findings, or answers. Do not dive straight into A2UI JSON code.\n"
+    "1. You MUST ALWAYS start your response with a friendly, conversational natural language paragraph (prose) summarizing your verification results, catalog findings, or answers. Do not dive straight into UI rendering.\n"
     "2. You MUST parse all tool results (such as get_fact_checks, consult_fact_rag_corpus, and check_source_credibility) and explain them to the user in a natural, friendly conversational list or paragraph first.\n"
-    "3. ONLY AFTER your conversational paragraph, write your A2UI JSON array containing the visual components.\n"
-    "4. Under NO circumstances should you output raw tool output JSONs, lists, or dictionary braces (`{}` or `[]`) directly to the user as your final reply text. Always translate them into clean, polished human-readable prose.\n"
-    "5. When displaying catalog items, you MUST NEVER output raw markdown bullet points (e.g. `* Verdict: FALSE`). You MUST represent each item visually inside A2UI Table layouts so they render as gorgeous, aligned visual tables in the chat window."
+    "3. Under NO circumstances should you output raw tool output JSONs, lists, or dictionary braces (`{}` or `[]`) directly to the user as your final reply text. Always translate them into clean, polished human-readable prose.\n"
+    "4. When displaying catalog items, you MUST represent each item visually inside A2UI Table layouts using the provided UI schemas so they render as gorgeous, aligned visual tables in the chat window."
 )
 
 
