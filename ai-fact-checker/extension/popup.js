@@ -462,10 +462,11 @@ async function sendChatMessage(msgText) {
   agentBubble.innerHTML = '<span class="material-symbols-outlined" style="animation: spin 1s linear infinite;">sync</span> Contacting Reasoning Engine...';
 
   try {
+    const byomSettings = JSON.parse(localStorage.getItem("byom_settings") || "{}");
     const res = await fetch(backendUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: msgText, user_id: "chrome-extension-user" })
+      body: JSON.stringify({ message: msgText, user_id: "chrome-extension-user", byom: byomSettings })
     });
 
     if (!res.ok) {
@@ -474,6 +475,24 @@ async function sendChatMessage(msgText) {
 
     const data = await res.json();
     agentBubble.innerHTML = "";
+
+    // Update query limit counter badge
+    const badge = document.getElementById("queryCounterBadge");
+    if (badge) {
+      if (data.remaining === 999 || byomSettings.api_key) {
+        badge.textContent = "⚡ UNLIMITED (BYOM)";
+        badge.style.background = "rgba(131, 56, 236, 0.25)";
+        badge.style.color = "#a855f7";
+        badge.style.borderColor = "#8338ec";
+      } else if (typeof data.remaining === "number") {
+        badge.textContent = `${data.remaining}/15 Left`;
+        if (data.remaining === 0) {
+          badge.style.background = "rgba(255, 71, 87, 0.2)";
+          badge.style.color = "#ff4757";
+          badge.style.borderColor = "#ff4757";
+        }
+      }
+    }
     
     const parts = data.parts || [];
     const texts = [];
@@ -622,8 +641,85 @@ form.addEventListener("submit", async (e) => {
   await sendChatMessage(text);
 });
 
+// BYOM Remote Auth Modal Logic & Controls
+const btnBYOM = document.getElementById("btnBYOM");
+const byomModal = document.getElementById("byomModal");
+const btnCloseBYOM = document.getElementById("btnCloseBYOM");
+const btnSaveBYOM = document.getElementById("btnSaveBYOM");
+const btnClearBYOM = document.getElementById("btnClearBYOM");
+const byomProviderSelect = document.getElementById("byomProviderSelect");
+const byomApiKeyInput = document.getElementById("byomApiKeyInput");
+const byomModelInput = document.getElementById("byomModelInput");
+
+function loadBYOMSettings() {
+  const saved = JSON.parse(localStorage.getItem("byom_settings") || "{}");
+  if (saved.provider) byomProviderSelect.value = saved.provider;
+  if (saved.api_key) byomApiKeyInput.value = saved.api_key;
+  if (saved.model) byomModelInput.value = saved.model;
+}
+
+if (btnBYOM) {
+  btnBYOM.addEventListener("click", () => {
+    loadBYOMSettings();
+    byomModal.classList.remove("hidden");
+  });
+}
+
+if (btnCloseBYOM) {
+  btnCloseBYOM.addEventListener("click", () => {
+    byomModal.classList.add("hidden");
+  });
+}
+
+if (btnSaveBYOM) {
+  btnSaveBYOM.addEventListener("click", () => {
+    const settings = {
+      provider: byomProviderSelect.value,
+      api_key: byomApiKeyInput.value.trim(),
+      model: byomModelInput.value.trim()
+    };
+    localStorage.setItem("byom_settings", JSON.stringify(settings));
+    byomModal.classList.add("hidden");
+
+    const b = bubble("agent");
+    if (settings.api_key) {
+      b.textContent = `🔑 Remote Auth Connected! AI Provider set to [${settings.provider.toUpperCase()}]. You now have UNLIMITED queries!`;
+      const badge = document.getElementById("queryCounterBadge");
+      if (badge) {
+        badge.textContent = "⚡ UNLIMITED (BYOM)";
+        badge.style.background = "rgba(131, 56, 236, 0.25)";
+        badge.style.color = "#a855f7";
+        badge.style.borderColor = "#8338ec";
+      }
+    } else {
+      b.textContent = "Cleared custom API key. Reverted to default Vertex AI Reasoning Engine with 15 free daily queries.";
+    }
+  });
+}
+
+if (btnClearBYOM) {
+  btnClearBYOM.addEventListener("click", () => {
+    localStorage.removeItem("byom_settings");
+    byomApiKeyInput.value = "";
+    byomModelInput.value = "";
+    byomProviderSelect.value = "default";
+    byomModal.classList.add("hidden");
+
+    const b = bubble("agent");
+    b.textContent = "Cleared custom API key. Reverted to default Vertex AI Reasoning Engine with 15 free daily queries.";
+    const badge = document.getElementById("queryCounterBadge");
+    if (badge) {
+      badge.textContent = "15/15 Left";
+      badge.style.background = "rgba(0, 245, 212, 0.12)";
+      badge.style.color = "var(--accent)";
+      badge.style.borderColor = "var(--accent-glow)";
+    }
+  });
+}
+
 // Initialize Popup
 window.addEventListener("load", () => {
   renderSources();
   updatePermissionUI();
+  loadBYOMSettings();
 });

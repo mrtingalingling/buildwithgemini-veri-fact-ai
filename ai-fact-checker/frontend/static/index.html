@@ -920,6 +920,46 @@
     </div>
   </div>
 
+  <!-- BYOM Remote Auth Modal -->
+  <div id="byomModal" class="permission-overlay hidden">
+    <div class="permission-modal" style="max-width: 420px; text-align: left;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="material-symbols-outlined" style="color: #a855f7; font-size: 1.3rem;">key</span>
+          <h3 style="font-size: 1rem; color: var(--text); margin: 0;">Bring Your Own AI Model</h3>
+        </div>
+        <button id="btnCloseBYOM" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><span class="material-symbols-outlined">close</span></button>
+      </div>
+
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+        Connect your custom remote API key to unlock <strong>UNLIMITED</strong> fact-check queries and use models like OpenAI GPT-4o, Anthropic Claude 3.5, Gemini, or Grok.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+        <label style="font-size: 0.75rem; font-weight: 600; color: var(--text);">AI Provider</label>
+        <select id="byomProviderSelect" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem; color: var(--text); font-size: 0.82rem; outline: none;">
+          <option value="default">Default (Google Vertex AI Reasoning Engine)</option>
+          <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
+          <option value="anthropic">Anthropic (Claude 3.5 Sonnet / Opus)</option>
+          <option value="gemini">Google Gemini (Gemini 2.5 Flash / Pro)</option>
+          <option value="grok">xAI Grok (Grok-2)</option>
+          <option value="custom">Custom / OpenRouter</option>
+        </select>
+
+        <label style="font-size: 0.75rem; font-weight: 600; color: var(--text);">Remote API Key</label>
+        <input type="password" id="byomApiKeyInput" placeholder="sk-..., AIza..., xai-..." style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem; color: var(--text); font-size: 0.82rem; outline: none;">
+
+        <label style="font-size: 0.75rem; font-weight: 600; color: var(--text);">Model Name (Optional Override)</label>
+        <input type="text" id="byomModelInput" placeholder="e.g. gpt-4o-mini, claude-3-5-sonnet-20241022" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem; color: var(--text); font-size: 0.82rem; outline: none;">
+
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+          <button id="btnSaveBYOM" class="btn-grant" style="flex: 1; background: linear-gradient(135deg, #8338ec, #3a86c8); border: none; cursor: pointer;">Save Key & Connect</button>
+          <button id="btnClearBYOM" class="btn-deny" style="flex: 0.7; cursor: pointer;">Clear Key</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <header>
     <div class="header-main">
       <div class="brand">
@@ -931,6 +971,10 @@
         <button id="btnInstallPWA" class="btn-theme" title="Install VeriFact AI App" style="margin-left: 0.4rem; display: none; background: rgba(0, 245, 212, 0.15); border-color: var(--accent); color: var(--accent);">
           <span class="material-symbols-outlined" style="font-size: 1rem;">install_desktop</span>
         </button>
+        <button id="btnBYOM" class="btn-theme" title="Bring Your Own AI Model / Remote Auth Settings" style="margin-left: 0.4rem; background: rgba(131, 56, 236, 0.2); border-color: #8338ec; color: #a855f7;">
+          <span class="material-symbols-outlined" style="font-size: 1rem;">key</span>
+        </button>
+        <span id="queryCounterBadge" style="margin-left: 0.4rem; font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 20px; background: rgba(0, 245, 212, 0.12); color: var(--accent); border: 1px solid var(--accent-glow);" title="15 free queries per user per day. Bring your own key for unlimited access!">15/15 Left</span>
       </div>
       <div id="permissionToggle" class="permission-status">
         <div class="status-dot"></div>
@@ -1501,15 +1545,33 @@ function renderReply(b, parts) {
 async function sendChatMessage(text) {
   const b = bubble("agent"); b.innerHTML = `<div class="skeleton-loader"><div class="skeleton-bar" style="width: 80%"></div><div class="skeleton-bar" style="width: 95%"></div><div class="skeleton-bar" style="width: 60%"></div></div>`;
   try {
-    const res = await fetch("/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text }) });
-    const raw = await res.text();
-    let data;
-    try { data = JSON.parse(raw); }
-    catch { throw new Error(`Server returned non-JSON (HTTP ${res.status}). ${raw.slice(0, 300)}`); }
+    const byomSettings = JSON.parse(localStorage.getItem("byom_settings") || "{}");
+    const res = await fetch("/chat", { 
+      method: "POST", 
+      headers: { "Content-Type": "application/json" }, 
+      body: JSON.stringify({ message: text, user_id: "web-user", byom: byomSettings }) 
+    });
+    const data = await res.json();
+
+    // Update query counter badge
+    const badge = document.getElementById("queryCounterBadge");
+    if (badge) {
+      if (data.remaining === 999 || byomSettings.api_key) {
+        badge.textContent = "⚡ UNLIMITED (BYOM)";
+        badge.style.background = "rgba(131, 56, 236, 0.25)";
+        badge.style.color = "#a855f7";
+        badge.style.borderColor = "#8338ec";
+      } else if (typeof data.remaining === "number") {
+        badge.textContent = `${data.remaining}/15 Left`;
+        if (data.remaining === 0) {
+          badge.style.background = "rgba(255, 71, 87, 0.2)";
+          badge.style.color = "#ff4757";
+          badge.style.borderColor = "#ff4757";
+        }
+      }
+    }
+
     renderReply(b, data.parts || []);
-    
-    // If permission was "once", expire it now
-    if (permissionState.duration === "once") {
       permissionState.status = "denied";
       permissionState.expiresAt = null;
       updatePermissionUI();
@@ -1746,9 +1808,87 @@ btnAddCatalog.addEventListener("click", async () => {
   );
 });
 
-// Initialize sources on load
+// BYOM Remote Auth Modal Logic & Controls
+const btnBYOM = document.getElementById("btnBYOM");
+const byomModal = document.getElementById("byomModal");
+const btnCloseBYOM = document.getElementById("btnCloseBYOM");
+const btnSaveBYOM = document.getElementById("btnSaveBYOM");
+const btnClearBYOM = document.getElementById("btnClearBYOM");
+const byomProviderSelect = document.getElementById("byomProviderSelect");
+const byomApiKeyInput = document.getElementById("byomApiKeyInput");
+const byomModelInput = document.getElementById("byomModelInput");
+
+function loadBYOMSettings() {
+  const saved = JSON.parse(localStorage.getItem("byom_settings") || "{}");
+  if (saved.provider) byomProviderSelect.value = saved.provider;
+  if (saved.api_key) byomApiKeyInput.value = saved.api_key;
+  if (saved.model) byomModelInput.value = saved.model;
+}
+
+if (btnBYOM) {
+  btnBYOM.addEventListener("click", () => {
+    loadBYOMSettings();
+    byomModal.classList.remove("hidden");
+  });
+}
+
+if (btnCloseBYOM) {
+  btnCloseBYOM.addEventListener("click", () => {
+    byomModal.classList.add("hidden");
+  });
+}
+
+if (btnSaveBYOM) {
+  btnSaveBYOM.addEventListener("click", () => {
+    const settings = {
+      provider: byomProviderSelect.value,
+      api_key: byomApiKeyInput.value.trim(),
+      model: byomModelInput.value.trim()
+    };
+    localStorage.setItem("byom_settings", JSON.stringify(settings));
+    byomModal.classList.add("hidden");
+
+    const b = bubble("agent");
+    if (settings.api_key) {
+      b.textContent = `🔑 Remote Auth Connected! AI Provider set to [${settings.provider.toUpperCase()}]. You now have UNLIMITED queries!`;
+      const badge = document.getElementById("queryCounterBadge");
+      if (badge) {
+        badge.textContent = "⚡ UNLIMITED (BYOM)";
+        badge.style.background = "rgba(131, 56, 236, 0.25)";
+        badge.style.color = "#a855f7";
+        badge.style.borderColor = "#8338ec";
+      }
+    } else {
+      b.textContent = "Cleared custom API key. Reverted to default Vertex AI Reasoning Engine with 15 free daily queries.";
+    }
+  });
+}
+
+if (btnClearBYOM) {
+  btnClearBYOM.addEventListener("click", () => {
+    localStorage.removeItem("byom_settings");
+    byomApiKeyInput.value = "";
+    byomModelInput.value = "";
+    byomProviderSelect.value = "default";
+    byomModal.classList.add("hidden");
+
+    const b = bubble("agent");
+    b.textContent = "Cleared custom API key. Reverted to default Vertex AI Reasoning Engine with 15 free daily queries.";
+    const badge = document.getElementById("queryCounterBadge");
+    if (badge) {
+      badge.textContent = "15/15 Left";
+      badge.style.background = "rgba(0, 245, 212, 0.12)";
+      badge.style.color = "var(--accent)";
+      badge.style.borderColor = "var(--accent-glow)";
+    }
+  });
+}
+
+// Initialize Popup
 window.addEventListener("load", () => {
   renderSources();
+  updatePermissionUI();
+  loadBYOMSettings();
 });
 
 // Service Worker Registration for PWA Support

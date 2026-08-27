@@ -480,6 +480,46 @@
     </div>
   </div>
 
+  <!-- BYOM Remote Auth Modal -->
+  <div id="byomModal" class="permission-overlay hidden">
+    <div class="permission-modal" style="padding: 1rem; text-align: left; max-width: 320px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem;">
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <span class="material-symbols-outlined" style="color: #a855f7; font-size: 1.1rem;">key</span>
+          <h3 style="font-size: 0.85rem; color: var(--text); margin: 0;">Bring Your Own AI Model</h3>
+        </div>
+        <button id="btnCloseBYOM" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><span class="material-symbols-outlined" style="font-size: 1rem;">close</span></button>
+      </div>
+
+      <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.6rem;">
+        Connect your custom remote API key to unlock <strong>UNLIMITED</strong> queries & multi-model support (OpenAI, Claude, Gemini, Grok).
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <label style="font-size: 0.7rem; font-weight: 600; color: var(--text);">AI Provider</label>
+        <select id="byomProviderSelect" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem; color: var(--text); font-size: 0.75rem; outline: none;">
+          <option value="default">Default (Google Vertex AI)</option>
+          <option value="openai">OpenAI (GPT-4o / GPT-4o-mini)</option>
+          <option value="anthropic">Anthropic (Claude 3.5 Sonnet)</option>
+          <option value="gemini">Google Gemini (2.5 Flash / Pro)</option>
+          <option value="grok">xAI Grok (Grok-2)</option>
+          <option value="custom">Custom / OpenRouter</option>
+        </select>
+
+        <label style="font-size: 0.7rem; font-weight: 600; color: var(--text);">Remote API Key</label>
+        <input type="password" id="byomApiKeyInput" placeholder="sk-..., AIza..., xai-..." style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem; color: var(--text); font-size: 0.75rem; outline: none;">
+
+        <label style="font-size: 0.7rem; font-weight: 600; color: var(--text);">Model Name (Optional)</label>
+        <input type="text" id="byomModelInput" placeholder="e.g. gpt-4o-mini, claude-3-5-sonnet-20241022" style="background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem; color: var(--text); font-size: 0.75rem; outline: none;">
+
+        <div style="display: flex; gap: 0.4rem; margin-top: 0.4rem;">
+          <button id="btnSaveBYOM" class="btn-grant" style="flex: 1; background: linear-gradient(135deg, #8338ec, #3a86c8); border: none; padding: 0.4rem; font-size: 0.75rem; cursor: pointer;">Save Key</button>
+          <button id="btnClearBYOM" class="btn-deny" style="flex: 0.7; padding: 0.4rem; font-size: 0.75rem; cursor: pointer;">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <header>
     <div class="header-main">
       <div class="brand">
@@ -488,9 +528,13 @@
         <button id="themeToggle" class="btn-icon" title="Toggle OLED theme">
           <span class="material-symbols-outlined">dark_mode</span>
         </button>
+        <button id="btnBYOM" class="btn-icon" title="Bring Your Own AI Model / Remote Auth" style="color: #a855f7;">
+          <span class="material-symbols-outlined">key</span>
+        </button>
         <button id="btnSettings" class="btn-icon" title="Backend Settings">
           <span class="material-symbols-outlined">settings</span>
         </button>
+        <span id="queryCounterBadge" style="font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 12px; background: rgba(0, 245, 212, 0.12); color: var(--accent); border: 1px solid var(--accent-glow);" title="15 free queries/day. Bring your own key for unlimited access!">15/15 Left</span>
       </div>
       <div id="permissionToggle" class="permission-status">
         <div class="status-dot"></div>
